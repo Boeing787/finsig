@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: starter
     region: frankfurt
-    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm --filter @finsig/web build
-    startCommand: corepack pnpm --filter @finsig/web exec next start -p $PORT
+    buildCommand: corepack enable && corepack pnpm install --frozen-lockfile && corepack pnpm --filter @finsig/web build
+    startCommand: corepack pnpm --filter @finsig/web exec next start -H 0.0.0.0 -p $PORT
     healthCheckPath: /
     envVars:
       - key: NODE_VERSION

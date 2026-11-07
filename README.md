@@ -39,6 +39,10 @@ To test AI locally, add `ANTHROPIC_API_KEY` to the ignored root `.env.local`. Wi
 demo still shows calculations and manual classification, but AI actions return an explicit
 configuration error. The API only accepts fixed demo tasks; it does not accept arbitrary prompts.
 The [Render Blueprint](render.yaml) provisions a Node web service and prompts for the key.
+For API deployment, set `RENDER_API_KEY` in the ignored `.env.local` and run
+`node scripts/deploy-render.mjs`. If the key can access multiple Render workspaces, also set
+`RENDER_OWNER_ID`. The script creates a Frankfurt Starter service, sends the Anthropic key as a
+server-side environment variable, and refuses to create a second service with the same name.
 
 Run a command for one workspace with pnpm filters:
 
