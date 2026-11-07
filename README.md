@@ -3,9 +3,20 @@
 FinSig turns PayPal activity, work time, and known costs into explainable financial
 signals for independent professionals.
 
+## Judge path
+
+The interactive demo needs no login and uses a fictional workspace. Run the app locally with
+`pnpm dev`, then open `http://localhost:3000/demo` until the Render deployment is live.
+
+1. **Overview:** compare September and October, inspect the exact cash bridge, then ask Claude for a source-grounded explanation.
+2. **Activities:** ask Claude to classify the unassigned receipt; inspect its evidence and confirm the suggestion yourself. The linked refund follows that assignment. Edit hours and known costs to see the contribution per hour change.
+3. **Manager:** inspect the deterministic 30-day run-rate scenario and the cash-trend alert.
+4. **Sources:** inspect the normalized records, including the `T1900` account correction excluded from revenue. Use **Reset demo** to start over.
+
+The public demo contains synthetic records and stores each visitor's choices in that browser's local storage. The actual PayPal integration is a first-party sandbox Transaction Search importer. Its [capture/refund verification log](docs/reporting-gate.md) records the observed API events and fee. FinSig does not connect arbitrary PayPal accounts from Ukraine. The Anthropic API key is server-only; AI suggests a category and ranks explanations, while code calculates money, validates references and requires human confirmation.
+
 Current integration is first-party Transaction Search for the configured sandbox merchant.
-It does not connect arbitrary PayPal accounts. The CLI below is a local development path;
-the application has no user authentication or public deployment yet.
+The CLI below is a local development path for real sandbox records.
 
 ## Workspace
 
@@ -23,6 +34,11 @@ pnpm typecheck
 pnpm build
 pnpm test
 ```
+
+To test AI locally, add `ANTHROPIC_API_KEY` to the ignored root `.env.local`. Without it, the
+demo still shows calculations and manual classification, but AI actions return an explicit
+configuration error. The API only accepts fixed demo tasks; it does not accept arbitrary prompts.
+The [Render Blueprint](render.yaml) provisions a Node web service and prompts for the key.
 
 Run a command for one workspace with pnpm filters:
 

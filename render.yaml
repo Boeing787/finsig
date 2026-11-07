@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: finsig-demo
+    runtime: node
+    plan: starter
+    region: frankfurt
+    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm --filter @finsig/web build
+    startCommand: corepack pnpm --filter @finsig/web exec next start -p $PORT
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.2
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-4-6
