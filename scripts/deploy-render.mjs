@@ -4,9 +4,11 @@ if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 const token = process.env.RENDER_API_KEY;
 const anthropicKey = process.env.ANTHROPIC_API_KEY;
+const plan = process.env.RENDER_PLAN ?? 'starter';
 if (!token || !anthropicKey) {
   throw new Error('RENDER_API_KEY and ANTHROPIC_API_KEY must be set in .env.local.');
 }
+if (!['starter', 'free'].includes(plan)) throw new Error('RENDER_PLAN must be starter or free.');
 
 async function render(path, init = {}) {
   const response = await fetch(`https://api.render.com/v1${path}`, {
@@ -21,7 +23,8 @@ async function render(path, init = {}) {
   const body = await response.json().catch(() => null);
   if (!response.ok) {
     const code = typeof body?.code === 'string' ? body.code : 'unknown';
-    throw new Error(`Render API returned HTTP ${response.status} (${code}).`);
+    const detail = typeof body?.message === 'string' ? body.message.slice(0, 240) : '';
+    throw new Error(`Render API returned HTTP ${response.status} (${code}). ${detail}`);
   }
   return body;
 }
@@ -56,7 +59,7 @@ const result = await render('/services', {
     ],
     serviceDetails: {
       runtime: 'node',
-      plan: 'starter',
+      plan,
       region: 'frankfurt',
       healthCheckPath: '/',
       envSpecificDetails: {

@@ -5,8 +5,8 @@ signals for independent professionals.
 
 ## Judge path
 
-The interactive demo needs no login and uses a fictional workspace. Run the app locally with
-`pnpm dev`, then open `http://localhost:3000/demo` until the Render deployment is live.
+The [interactive demo](https://finsig-demo.onrender.com/demo) needs no login and uses a fictional
+workspace. For local development, run `pnpm dev` and open `http://localhost:3000/demo`.
 
 1. **Overview:** compare September and October, inspect the exact cash bridge, then ask Claude for a source-grounded explanation.
 2. **Activities:** ask Claude to classify the unassigned receipt; inspect its evidence and confirm the suggestion yourself. The linked refund follows that assignment. Edit hours and known costs to see the contribution per hour change.
@@ -40,9 +40,12 @@ demo still shows calculations and manual classification, but AI actions return a
 configuration error. The API only accepts fixed demo tasks; it does not accept arbitrary prompts.
 The [Render Blueprint](render.yaml) provisions a Node web service and prompts for the key.
 For API deployment, set `RENDER_API_KEY` in the ignored `.env.local` and run
-`node scripts/deploy-render.mjs`. If the key can access multiple Render workspaces, also set
-`RENDER_OWNER_ID`. The script creates a Frankfurt Starter service, sends the Anthropic key as a
+`RENDER_PLAN=free node scripts/deploy-render.mjs`. If the key can access multiple Render workspaces,
+also set `RENDER_OWNER_ID`. The script creates a Frankfurt service, sends the Anthropic key as a
 server-side environment variable, and refuses to create a second service with the same name.
+The current demo uses Render Free because Starter requires a payment method, even with promotional
+credits. Free services spin down after 15 minutes of inactivity and can take about a minute to wake.
+Switch to Starter before judging for a consistently responsive demo.
 
 Run a command for one workspace with pnpm filters:
 
