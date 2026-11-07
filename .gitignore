@@ -1,0 +1,28 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+
+# Build and test output
+.turbo/
+.next/
+dist/
+coverage/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.aws/
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+**/crash.log
+infra/envs/*/backend.hcl
+infra/envs/*/terraform.tfvars
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+*.tsbuildinfo

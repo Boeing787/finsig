@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: finsig
+      POSTGRES_USER: finsig
+      POSTGRES_PASSWORD: finsig_dev
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - finsig_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U finsig -d finsig']
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+volumes:
+  finsig_pg:

@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+current_dir="$(pwd -P)"
+case "$current_dir/" in
+  "$project_root/"*) ;;
+  *) echo 'Run this command from inside the FinSig directory.' >&2; exit 64 ;;
+esac
+
+expected_account='623588627433'
+profile='finsig-personal'
+root_arn="arn:aws:iam::$expected_account:root"
+export AWS_CONFIG_FILE="$project_root/.aws/config"
+export AWS_SHARED_CREDENTIALS_FILE="$project_root/.aws/credentials"
+export AWS_LOGIN_CACHE_DIRECTORY="$project_root/.aws/login-cache"
+export AWS_PROFILE="$profile"
+export AWS_DEFAULT_REGION='eu-central-1'
+export AWS_PAGER=''
+export AWS_EC2_METADATA_DISABLED='true'
+
+# Prevent inherited corporate credentials and endpoint overrides from taking precedence.
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_SECURITY_TOKEN
+unset AWS_ROLE_ARN AWS_WEB_IDENTITY_TOKEN_FILE AWS_CONTAINER_CREDENTIALS_FULL_URI
+unset AWS_CONTAINER_CREDENTIALS_RELATIVE_URI AWS_CONTAINER_AUTHORIZATION_TOKEN
+unset AWS_ENDPOINT_URL AWS_ENDPOINT_URL_STS AWS_CA_BUNDLE
+
+# Keep both the CLI login and Terraform credential process in this project.
+mkdir -p "$project_root/.aws"
+if [[ ! -f "$AWS_CONFIG_FILE" ]]; then
+  aws configure set region eu-central-1 --profile "$profile"
+fi
+if ! aws configure get credential_process --profile finsig-terraform >/dev/null 2>&1; then
+  aws configure set region eu-central-1 --profile finsig-terraform
+  aws configure set credential_process \
+    'aws configure export-credentials --profile finsig-personal --format process' \
+    --profile finsig-terraform
+fi
+
+action="${1:-}"
+case "$action" in
+  login)
+    shift
+    aws login --profile "$profile" "$@"
+    account="$(aws sts get-caller-identity --profile "$profile" --query Account --output text)"
+    if [[ "$account" != "$expected_account" ]]; then
+      echo "FinSig AWS account mismatch: expected $expected_account, got $account. Refusing access." >&2
+      exit 77
+    fi
+    arn="$(aws sts get-caller-identity --profile "$profile" --query Arn --output text)"
+    printf 'FinSig AWS account verified: %s\n' "$account"
+    if [[ "$arn" == "$root_arn" ]]; then
+      echo 'Root principal detected. Resource commands are blocked until a non-root IAM/SSO principal is configured.' >&2
+    fi
+    ;;
+  identity)
+    account="$(aws sts get-caller-identity --profile "$profile" --query Account --output text)"
+    if [[ "$account" != "$expected_account" ]]; then
+      echo "FinSig AWS account mismatch: expected $expected_account, got $account. Refusing access." >&2
+      exit 77
+    fi
+    printf 'FinSig AWS account verified: %s\n' "$account"
+    if [[ "$(aws sts get-caller-identity --profile "$profile" --query Arn --output text)" == "$root_arn" ]]; then
+      echo 'Root principal detected. Resource commands are blocked until a non-root IAM/SSO principal is configured.' >&2
+    fi
+    ;;
+  aws)
+    shift
+    for argument in "$@"; do
+      case "$argument" in
+        --profile|--profile=*|--endpoint-url|--endpoint-url=*)
+          echo 'Profile and endpoint overrides are disabled for FinSig.' >&2
+          exit 64
+          ;;
+      esac
+    done
+    account="$(aws sts get-caller-identity --profile "$profile" --query Account --output text)"
+    if [[ "$account" != "$expected_account" ]]; then
+      echo "FinSig AWS account mismatch: expected $expected_account, got $account. Refusing access." >&2
+      exit 77
+    fi
+    arn="$(aws sts get-caller-identity --profile "$profile" --query Arn --output text)"
+    if [[ "$arn" == "$root_arn" ]]; then
+      echo 'Refusing AWS resource commands under root. Sign in with a non-root IAM/SSO principal.' >&2
+      exit 77
+    fi
+    exec aws --profile "$profile" "$@"
+    ;;
+  terraform)
+    shift
+    for argument in "$@"; do
+      case "$argument" in
+        -chdir=*)
+          target_dir="$(cd -- "${argument#-chdir=}" && pwd -P)"
+          case "$target_dir/" in
+            "$project_root/"*) ;;
+            *) echo 'Terraform -chdir must stay inside the FinSig directory.' >&2; exit 64 ;;
+          esac
+          ;;
+      esac
+    done
+    account="$(aws sts get-caller-identity --profile "$profile" --query Account --output text)"
+    if [[ "$account" != "$expected_account" ]]; then
+      echo "FinSig AWS account mismatch: expected $expected_account, got $account. Refusing access." >&2
+      exit 77
+    fi
+    arn="$(aws sts get-caller-identity --profile "$profile" --query Arn --output text)"
+    if [[ "$arn" == "$root_arn" ]]; then
+      echo 'Refusing Terraform under root. Sign in with a non-root IAM/SSO principal.' >&2
+      exit 77
+    fi
+    export AWS_PROFILE='finsig-terraform'
+    exec terraform "$@"
+    ;;
+  *)
+    echo 'Usage: scripts/aws-finsig login|identity|aws <aws-args>|terraform <terraform-args>' >&2
+    exit 64
+    ;;
+esac
