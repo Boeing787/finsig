@@ -67,7 +67,7 @@ development-only. Do not expose this database or the current CLI flow publicly.
 
 ```bash
 docker compose up -d postgres
-pnpm --filter @finsig/web db:migrate
+pnpm db:migrate
 pnpm --filter @finsig/web paypal:import
 pnpm --filter @finsig/web finsig:records
 pnpm --filter @finsig/web finsig:summary 2026-11
@@ -79,6 +79,9 @@ return `inserted: 0` when no new reporting rows exist. `T0006` positive receipts
 count as sales, `T1107` negative refunds reduce them, and other events, including
 `T1900` account corrections, remain in review. Only status `S` contributes to the
 cash summary. Unknown fees, hours, and direct costs are represented separately.
+
+Database changes are versioned with Flyway. See the [migration guide](docs/MIGRATIONS.md); never
+edit a migration that has already been applied.
 
 For a local classification and work-input check, use UUIDs from `finsig:records`:
 

@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import Decimal from 'decimal.js';
 import { z } from 'zod';
 import { createPool } from './db/pool';
@@ -11,12 +10,6 @@ const pool = createPool();
 
 const uuid = z.string().uuid();
 const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
-
-async function migrate() {
-  const sql = await readFile(new URL('./db/schema.sql', import.meta.url), 'utf8');
-  await pool.query(sql);
-  return { result: 'ok', schema: 'ready' };
-}
 
 async function importReporting() {
   const end = new Date();
@@ -271,8 +264,6 @@ async function summary() {
 try {
   const output = await (async () => {
     switch (command) {
-      case 'migrate':
-        return migrate();
       case 'import':
         return importReporting();
       case 'records':
@@ -284,7 +275,7 @@ try {
       case 'summary':
         return summary();
       default:
-        throw new Error('Commands: migrate, import, records, confirm, work, summary');
+        throw new Error('Commands: import, records, confirm, work, summary');
     }
   })();
   console.log(JSON.stringify(output, null, 2));

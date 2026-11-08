@@ -13,6 +13,8 @@
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "test": "turbo test",
+    "db:migrate": "docker compose run --rm flyway migrate",
+    "db:validate": "docker compose run --rm flyway validate",
     "paypal:probe": "node --env-file=.env.local scripts/paypal-reporting-probe.mjs",
     "paypal:verify-reporting": "node --env-file=.env.local scripts/paypal-verify-reporting.mjs",
     "paypal:seed-order": "node --env-file=.env.local scripts/paypal-create-sandbox-order.mjs",

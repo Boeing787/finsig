@@ -15,5 +15,25 @@ services:
       timeout: 2s
       retries: 20
 
+  flyway:
+    image: flyway/flyway:13.12.1-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/finsig
+      FLYWAY_USER: finsig
+      FLYWAY_PASSWORD: finsig_dev
+      FLYWAY_SCHEMAS: public
+      FLYWAY_TABLE: flyway_schema_history
+      FLYWAY_VALIDATE_MIGRATION_NAMING: 'true'
+      FLYWAY_CLEAN_DISABLED: 'true'
+      FLYWAY_CONNECT_RETRIES: '20'
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./db/migrations:/flyway/sql:ro
+      - ./db/flyway.conf:/flyway/conf/flyway.conf:ro
+    entrypoint: ['flyway']
+
 volumes:
   finsig_pg:

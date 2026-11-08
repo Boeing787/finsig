@@ -1,3 +1,6 @@
+-- IF NOT EXISTS lets existing local databases created by the former schema.sql
+-- command transition to Flyway without dropping records. New migrations should
+-- use explicit DDL and never edit an applied version.
 CREATE TABLE IF NOT EXISTS import_runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   started_at timestamptz NOT NULL DEFAULT now(),
@@ -31,6 +34,7 @@ CREATE TABLE IF NOT EXISTS paypal_records (
   first_import_id uuid NOT NULL REFERENCES import_runs(id),
   last_seen_at timestamptz NOT NULL DEFAULT now()
 );
+
 CREATE INDEX IF NOT EXISTS paypal_records_initiated_idx ON paypal_records (initiated_at DESC);
 CREATE INDEX IF NOT EXISTS paypal_records_kind_currency_idx ON paypal_records (kind, currency);
 
@@ -54,6 +58,3 @@ CREATE TABLE IF NOT EXISTS work_inputs (
   CHECK (hours IS NULL OR hours >= 0),
   CHECK (direct_cost_minor IS NULL OR direct_cost_minor >= 0)
 );
-
-INSERT INTO activities (name) VALUES ('Design'), ('Consulting'), ('Support'), ('Sandbox test')
-ON CONFLICT (name) DO NOTHING;
