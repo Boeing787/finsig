@@ -58,6 +58,20 @@ The [interview guide](docs/user-interviews.md) covers the first user conversatio
 The [AWS access guide](docs/aws-access.md) documents the isolated project profile and account guard.
 The [Terraform infrastructure](infra/README.md) contains the modular AWS baseline and apply sequence.
 
+## CI and deployment
+
+GitHub Actions classifies changes, runs formatting, lint and type checks, then
+selectively runs tests, build, Flyway migration checks and Terraform validation.
+The single `ci-gate` job fails if a required check fails. A successful `main`
+push triggers [Render deployment](.github/workflows/infra-deploy.yml) of that
+exact commit, followed by an HTTP smoke check of `/demo`. A newer `main` commit
+supersedes an older deployment. Configure `RENDER_API_KEY` as a repository secret
+and `RENDER_SERVICE_ID` as a repository variable; do not commit either key.
+
+The optional [AWS deployment identity](infra/deploy-identity/README.md) is
+separate from Render. AWS Terraform is syntax-checked in CI but is not
+auto-applied to the account while the AWS app stack remains a baseline.
+
 ## Local reporting and calculations
 
 Use Node 22+ and Docker Desktop. Put the sandbox app credentials in the ignored root

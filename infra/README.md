@@ -7,6 +7,7 @@ Target: account `623588627433`, region `eu-central-1`, environment `dev`. This i
 ```text
 infra/
   bootstrap/           S3 state bucket, local bootstrap state
+  deploy-identity/     GitHub OIDC provider and FinSig_admin deploy role
   envs/dev/            one composition root and remote state
   modules/
     network/           VPC, public app subnet, two private DB subnets, security groups
@@ -30,6 +31,10 @@ flowchart LR
 The EC2 subnet has an internet gateway and no NAT gateway. RDS uses private subnets in two Availability Zones, has no public endpoint, and accepts PostgreSQL only from the EC2 security group. The instance has no SSH ingress and requires IMDSv2; use Systems Manager Session Manager. The RDS master password is generated and stored by RDS in Secrets Manager, so it does not enter Terraform variables or state as a plaintext value. The EC2 role can read only its application configuration secret, not the RDS master secret. The application secret is created without a value; fill it outside Terraform after creating an application DB role.
 
 ## Apply sequence
+
+The [GitHub deployment identity](deploy-identity/README.md) is an independent
+Terraform root. Applying it creates the role only and does not provision the
+application stack or the state bucket.
 
 1. Sign in with a non-root IAM or IAM Identity Center principal in the personal account. `./scripts/aws-finsig identity` must report account `623588627433` without the root warning. The wrapper checks account and principal before any Terraform command. The provider and S3 backend independently allow only this account. Raw `terraform` or `aws` in the directory does not automatically switch accounts.
 2. From the repository root, run `./scripts/aws-finsig terraform -chdir=infra/bootstrap init`, then `plan`, then review and `apply`. This creates the S3 state bucket. Bootstrap's local state is gitignored; keep a secure backup of it. Do not delete the state bucket while dev state exists.

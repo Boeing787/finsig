@@ -1,0 +1,59 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-finsig-render
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+      - name: Check commit and deployment changes
+        id: changes
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          [[ "$(git rev-parse HEAD)" == "$VERIFIED_SHA" ]]
+          if [[ "$(git rev-parse origin/main)" != "$VERIFIED_SHA" ]]; then
+            echo 'A newer main commit exists; its CI run will deploy it.'
+            exit 0
+          fi
+          if git diff --quiet HEAD^ HEAD -- \
+            apps/web packages package.json pnpm-lock.yaml pnpm-workspace.yaml \
+            turbo.json render.yaml scripts/ci/deploy-render.mjs \
+            .github/workflows/ci.yml .github/workflows/infra-deploy.yml; then
+            echo 'No Render deployment changes.'
+            exit 0
+          fi
+          echo 'deploy=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        if: steps.changes.outputs.deploy == 'true'
+        with:
+          node-version-file: .node-version
+      - name: Deploy verified commit and smoke test
+        if: steps.changes.outputs.deploy == 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          RENDER_EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/ci/deploy-render.mjs

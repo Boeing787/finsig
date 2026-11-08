@@ -7,6 +7,7 @@ services:
     buildCommand: corepack enable && corepack pnpm install --frozen-lockfile && corepack pnpm --filter @finsig/web build
     startCommand: corepack pnpm --filter @finsig/web exec next start -H 0.0.0.0 -p $PORT
     healthCheckPath: /
+    autoDeployTrigger: 'off'
     envVars:
       - key: NODE_VERSION
         value: 22.22.2

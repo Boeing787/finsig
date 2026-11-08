@@ -2,35 +2,36 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
-  checks:
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.detect.outputs.web }}
+      shared: ${{ steps.detect.outputs.shared }}
+      migrations: ${{ steps.detect.outputs.migrations }}
+      terraform: ${{ steps.detect.outputs.terraform }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          version: 10.33.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
+          fetch-depth: 0
+      - uses: ./.github/actions/detect-changes
+        id: detect
 
-  database-migrations:
+  quality:
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -42,9 +43,89 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Apply migrations to a clean PostgreSQL database
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+  test-web:
+    needs: [changes, quality]
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+
+  build-web:
+    needs: [changes, quality]
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  migrations-check:
+    needs: [changes, quality]
+    if: needs.changes.outputs.migrations == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: 10.33.0
+      - run: docker compose up -d postgres
+      - run: pnpm db:migrate
+      - run: pnpm db:validate
+      - run: pnpm db:migrate
+
+  terraform-check:
+    needs: [changes, quality]
+    if: needs.changes.outputs.terraform == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.15.5
+      - run: terraform fmt -check -recursive infra
+      - run: terraform -chdir=infra/bootstrap init -backend=false
+      - run: terraform -chdir=infra/bootstrap validate
+      - run: terraform -chdir=infra/deploy-identity init -backend=false
+      - run: terraform -chdir=infra/deploy-identity validate
+      - run: terraform -chdir=infra/envs/dev init -backend=false
+      - run: terraform -chdir=infra/envs/dev validate
+
+  ci-gate:
+    if: always()
+    needs: [changes, quality, test-web, build-web, migrations-check, terraform-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful checks
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          QUALITY: ${{ needs.quality.result }}
+          WEB_TEST: ${{ needs.test-web.result }}
+          WEB_BUILD: ${{ needs.build-web.result }}
+          MIGRATIONS: ${{ needs.migrations-check.result }}
+          TERRAFORM: ${{ needs.terraform-check.result }}
         run: |
-          docker compose up -d postgres
-          pnpm db:migrate
-          pnpm db:validate
-          pnpm db:migrate
+          set -euo pipefail
+          [[ "$CHANGES" == success && "$QUALITY" == success ]]
+          for result in "$WEB_TEST" "$WEB_BUILD" "$MIGRATIONS" "$TERRAFORM"; do
+            [[ "$result" == success || "$result" == skipped ]]
+          done

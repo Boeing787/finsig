@@ -51,7 +51,7 @@ const result = await render('/services', {
     ownerId,
     repo: 'https://github.com/dmrvcodes/finsig',
     branch: 'main',
-    autoDeployTrigger: 'checksPass',
+    autoDeployTrigger: 'off',
     envVars: [
       { key: 'NODE_VERSION', value: '22.22.2' },
       { key: 'ANTHROPIC_MODEL', value: 'claude-sonnet-4-6' },

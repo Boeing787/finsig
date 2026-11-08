@@ -1,0 +1,44 @@
+name: Detect FinSig changes
+description: Classify files changed by a push or pull request
+
+outputs:
+  web:
+    value: ${{ steps.filter.outputs.web }}
+    description: Web app changed
+  shared:
+    value: ${{ steps.filter.outputs.shared }}
+    description: Shared packages or root build configuration changed
+  migrations:
+    value: ${{ steps.filter.outputs.migrations }}
+    description: Flyway or PostgreSQL configuration changed
+  terraform:
+    value: ${{ steps.filter.outputs.terraform }}
+    description: Terraform configuration changed
+
+runs:
+  using: composite
+  steps:
+    - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+      id: filter
+      with:
+        filters: |
+          web:
+            - 'apps/web/**'
+            - 'scripts/next-with-env.mjs'
+          shared:
+            - 'packages/**'
+            - 'package.json'
+            - 'pnpm-lock.yaml'
+            - 'pnpm-workspace.yaml'
+            - 'turbo.json'
+            - '.node-version'
+            - '.github/actions/**'
+            - '.github/workflows/ci.yml'
+          migrations:
+            - 'db/**'
+            - 'compose.yaml'
+            - 'package.json'
+            - '.github/workflows/ci.yml'
+          terraform:
+            - 'infra/**'
+            - '.github/workflows/ci.yml'
