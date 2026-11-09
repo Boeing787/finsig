@@ -50,6 +50,7 @@ jobs:
         if: steps.changes.outputs.deploy == 'true'
         with:
           node-version-file: .node-version
+          package-manager-cache: false
       - name: Deploy verified commit and smoke test
         if: steps.changes.outputs.deploy == 'true'
         env:
