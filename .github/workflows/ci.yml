@@ -9,7 +9,9 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Required status checks must finish once they start. GitHub can otherwise
+  # mark upstream jobs as abandoned during a rerun and leave ci-gate failing.
+  cancel-in-progress: false
 
 permissions:
   contents: read

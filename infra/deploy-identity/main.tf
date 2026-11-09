@@ -25,7 +25,10 @@ resource "aws_iam_role" "finsig_admin" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:dmrvcodes/finsig:ref:refs/heads/main"
+          # GitHub uses immutable OIDC subjects for repositories created after
+          # 2026-07-15. The numeric IDs prevent a renamed or recycled namespace
+          # from assuming this account-wide deployment role.
+          "token.actions.githubusercontent.com:sub" = "repo:dmrvcodes@85731803/finsig@1449784317:ref:refs/heads/main"
         }
       }
     }]

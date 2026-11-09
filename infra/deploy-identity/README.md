@@ -3,8 +3,9 @@
 This Terraform root creates the account-level GitHub OIDC provider and one role,
 `/finsig/FinSig_admin`, in AWS account `623588627433`. GitHub receives temporary
 credentials only when the `dmrvcodes/finsig` workflow runs from `main`. The trust
-policy requires `aud=sts.amazonaws.com` and the exact `main` subject. Pull requests,
-forks and other branches cannot assume it.
+policy requires `aud=sts.amazonaws.com` and GitHub's immutable subject for the
+repository owner ID, repository ID and `main` ref. Pull requests, forks and other
+branches cannot assume it.
 
 The attached AWS managed `AdministratorAccess` policy is **account-wide**. The
 `/finsig/` IAM path is a naming convention, not a permission boundary. Do not
