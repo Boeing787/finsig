@@ -1,5 +1,7 @@
 'use client';
 
+import { Badge, Button, StatCard } from '@finsig/ui';
+import { Bot, ChartNoAxesCombined, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
@@ -104,28 +106,6 @@ async function callAI(body: unknown): Promise<unknown> {
     throw new Error(error.success ? error.data.error : 'AI request failed.');
   }
   return json;
-}
-
-function StatCard({
-  label,
-  value,
-  detail,
-  emphasized = false,
-  negative = false,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  emphasized?: boolean;
-  negative?: boolean;
-}) {
-  return (
-    <div className={`stat-card ${emphasized ? 'emphasized' : ''}`}>
-      <span>{label}</span>
-      <strong className={negative ? 'down' : ''}>{value}</strong>
-      <small>{detail}</small>
-    </div>
-  );
 }
 
 function validateHours(value: string): string {
@@ -266,6 +246,12 @@ export default function DemoPage() {
               {item}
             </button>
           ))}
+          <Link className="nav-link studio-nav-link" href="/demo/studio">
+            <span className="nav-icon">
+              <ChartNoAxesCombined size={17} />
+            </span>
+            AG Studio
+          </Link>
         </nav>
         <div className="sidebar-bottom">
           <span className="demo-avatar">DE</span>
@@ -283,22 +269,32 @@ export default function DemoPage() {
           </div>
           <div className="topbar-actions">
             <span className="period-pill">● &nbsp; Oct 2026</span>
-            <button className="text-button" onClick={resetDemo} type="button">
+            <Button
+              leadingIcon={<RotateCcw size={13} />}
+              onClick={resetDemo}
+              size="sm"
+              variant="quiet"
+            >
               Reset demo
-            </button>
+            </Button>
           </div>
         </header>
         <main className="content">
           <div className="demo-notice">
-            <strong>Interactive sample.</strong> The workspace uses fictional records. FinSig&apos;s
-            PayPal Transaction Search importer was separately verified in sandbox.{' '}
-            <a
-              href="https://github.com/dmrvcodes/finsig/blob/main/docs/reporting-gate.md"
-              target="_blank"
-              rel="noreferrer"
-            >
-              See evidence ↗
-            </a>
+            <div>
+              <strong>Interactive sample.</strong> The workspace uses fictional records.
+              FinSig&apos;s PayPal Transaction Search importer was separately verified in sandbox.{' '}
+              <a
+                href="https://github.com/dmrvcodes/finsig/blob/main/docs/reporting-gate.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                See evidence ↗
+              </a>
+            </div>
+            <Link className="studio-cta" href="/demo/studio">
+              <Bot size={14} /> Open AI report builder
+            </Link>
           </div>
 
           {view === 'Overview' && (
@@ -316,7 +312,7 @@ export default function DemoPage() {
                   label="October net receipts"
                   value={money(current.netMinor)}
                   detail="Gross − refunds − PayPal fees"
-                  emphasized
+                  featured
                 />
                 <StatCard
                   label="September net receipts"
@@ -327,7 +323,7 @@ export default function DemoPage() {
                   label="Month-over-month"
                   value={money(delta, true)}
                   detail="Calculated from source records"
-                  negative={delta < 0n}
+                  trend={delta < 0n ? 'down' : 'up'}
                 />
               </div>
               <div className="panel-grid">
@@ -337,7 +333,7 @@ export default function DemoPage() {
                       <p className="eyebrow">THE EXACT BRIDGE</p>
                       <h2>Why net receipts changed</h2>
                     </div>
-                    <span className="verified-tag">✓ Reconciled</span>
+                    <Badge tone="success">✓ Reconciled</Badge>
                   </div>
                   <div className="bridge-start">
                     <span>September net</span>
@@ -377,14 +373,14 @@ export default function DemoPage() {
                     reference, then renders amounts from code.
                   </p>
                   {!explanation && (
-                    <button
-                      className="button button-primary"
+                    <Button
                       onClick={() => runAI('explain')}
+                      isLoading={aiBusy === 'explain'}
                       disabled={aiBusy !== null}
-                      type="button"
+                      trailingIcon={<Bot size={14} />}
                     >
-                      {aiBusy === 'explain' ? 'Checking sources…' : 'Generate explanation ✧'}
-                    </button>
+                      Generate explanation
+                    </Button>
                   )}
                   {explanation && (
                     <div className="claims">
@@ -597,7 +593,7 @@ export default function DemoPage() {
                   label="30-day receipt baseline"
                   value={money(forecast.receiptsMinor)}
                   detail="October daily average × 30"
-                  emphasized
+                  featured
                 />
                 <StatCard
                   label="After known direct costs"
@@ -608,7 +604,7 @@ export default function DemoPage() {
                   label="Classification queue"
                   value={`${unassigned.length} records`}
                   detail="Resolve before activity decisions"
-                  negative={unassigned.length > 0}
+                  trend={unassigned.length > 0 ? 'down' : 'neutral'}
                 />
               </div>
               <div className="panel-grid">
@@ -682,7 +678,7 @@ export default function DemoPage() {
                     <p className="eyebrow">SANITIZED DEMO FIXTURE</p>
                     <h2>PayPal-style reporting records</h2>
                   </div>
-                  <span className="verified-tag">No live buyer data</span>
+                  <Badge tone="success">No live buyer data</Badge>
                 </div>
                 <div className="source-list">
                   {[...demoRecords].reverse().map((record) => (

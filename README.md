@@ -6,14 +6,18 @@ signals for independent professionals.
 ## Judge path
 
 The [interactive demo](https://finsig-demo.onrender.com/demo) needs no login and uses a fictional
-workspace. For local development, run `pnpm dev` and open `http://localhost:3000/demo`.
+workspace. The [AG Studio income control room](https://finsig-demo.onrender.com/demo/studio) is the
+primary judge path. For local development, run `pnpm dev` and open `http://localhost:3000/demo`.
 
-1. **Overview:** compare September and October, inspect the exact cash bridge, then ask Claude for a source-grounded explanation.
-2. **Activities:** ask Claude to classify the unassigned receipt; inspect its evidence and confirm the suggestion yourself. The linked refund follows that assignment. Edit hours and known costs to see the contribution per hour change.
-3. **Manager:** inspect the deterministic 30-day run-rate scenario and the cash-trend alert.
-4. **Sources:** inspect the normalized records, including the `T1900` account correction excluded from revenue. Use **Reset demo** to start over.
+1. **AG Studio:** open the report builder, inspect the custom net-change bridge and source ledger,
+   then ask the built-in agent to explain the decline and show the evidence. Switch to edit mode to
+   resize, configure, and add widgets; use **Reset demo** to restore the authored report.
+2. **Overview:** compare September and October, inspect the exact cash bridge, then ask Claude for a source-grounded explanation.
+3. **Activities:** ask Claude to classify the unassigned receipt; inspect its evidence and confirm the suggestion yourself. The linked refund follows that assignment. Edit hours and known costs to see the contribution per hour change.
+4. **Manager:** inspect the deterministic 30-day run-rate scenario and the cash-trend alert.
+5. **Sources:** inspect the normalized records, including the `T1900` account correction excluded from revenue.
 
-The public demo contains synthetic records and stores each visitor's choices in that browser's local storage. The actual PayPal integration is a first-party sandbox Transaction Search importer. Its [capture/refund verification log](docs/reporting-gate.md) records the observed API events and fee. FinSig does not connect arbitrary PayPal accounts from Ukraine. The Anthropic API key is server-only; AI suggests a category and ranks explanations, while code calculates money, validates references and requires human confirmation.
+The public demo contains synthetic records and stores each visitor's choices in that browser's local storage. The actual PayPal integration is a first-party sandbox Transaction Search importer. Its [capture/refund verification log](docs/reporting-gate.md) records the observed API events and fee. FinSig does not connect arbitrary PayPal accounts from Ukraine. The Anthropic API key is server-only; AI suggests a category, operates AG Studio through the Agent Framework, and ranks explanations, while code calculates money, validates references and requires human confirmation. See the [AG Studio implementation notes](docs/ag-studio.md) and [FinSig design system](docs/design-system.md).
 
 Current integration is first-party Transaction Search for the configured sandbox merchant.
 The CLI below is a local development path for real sandbox records.
@@ -21,6 +25,8 @@ The CLI below is a local development path for real sandbox records.
 ## Workspace
 
 - `apps/web` — Next.js application.
+- `packages/ui` — FinSig tokens, generic controls, composed financial UI, and the TanStack-based
+  application table.
 - `packages/eslint-config` — shared flat ESLint configuration.
 - `packages/typescript-config` — shared TypeScript configuration.
 
@@ -35,9 +41,11 @@ pnpm build
 pnpm test
 ```
 
-To test AI locally, add `ANTHROPIC_API_KEY` to the ignored root `.env.local`. Without it, the
+To test AI locally, add `ANTHROPIC_API_KEY` to the ignored root `.env.local`. Add the trial key as
+`NEXT_PUBLIC_AG_STUDIO_LICENSE_KEY`; this is a client license string, never a provider secret. Without AI, the
 demo still shows calculations and manual classification, but AI actions return an explicit
-configuration error. The API only accepts fixed demo tasks; it does not accept arbitrary prompts.
+configuration error. The main demo API accepts only fixed tasks. The Studio AI proxy accepts the
+Agent Framework protocol, rate-limits calls, and translates only declared client tools.
 The [Render Blueprint](render.yaml) provisions a Node web service and prompts for the key.
 For API deployment, set `RENDER_API_KEY` in the ignored `.env.local` and run
 `RENDER_PLAN=free node scripts/deploy-render.mjs`. If the key can access multiple Render workspaces,

@@ -17,7 +17,11 @@
     "finsig:work": "node --env-file=../../.env.local --import tsx src/cli.ts work"
   },
   "dependencies": {
+    "@finsig/ui": "workspace:*",
+    "ag-studio": "^3.1.0",
+    "ag-studio-react": "^3.1.0",
     "decimal.js": "^10.6.0",
+    "lucide-react": "^0.468.0",
     "next": "^16.4.5",
     "pg": "^8.23.1",
     "react": "^19.3.1",
@@ -26,12 +30,14 @@
   },
   "devDependencies": {
     "@finsig/eslint-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.5",
     "@finsig/typescript-config": "workspace:*",
     "@types/node": "^22.18.0",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "eslint": "^9.35.0",
+    "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15"
   }
 }
