@@ -31,7 +31,8 @@ other AWS account. If the GitHub OIDC provider already exists in this AWS accoun
 `aws_iam_openid_connect_provider.github_actions` before planning. Do not create
 a second account-global provider.
 
-The role is reserved for a future AWS Terraform deployment job. The live demo
-currently deploys to Render after GitHub `ci-gate`; it does not need AWS
-credentials. The AWS deploy workflow is not enabled while the app stack remains
-a baseline.
+The role is used by `.github/workflows/infra-deploy.yml` after `ci-gate` passes
+for a commit to `main` that changes `infra/` or the deployment workflow. That
+job applies the `infra/envs/dev` stack from the encrypted S3 backend. Render
+deployment remains a separate job in the same workflow. Pull request and fork
+jobs cannot assume the AWS role.

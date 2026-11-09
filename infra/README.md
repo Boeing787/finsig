@@ -34,13 +34,17 @@ The EC2 subnet has an internet gateway and no NAT gateway. RDS uses private subn
 
 The [GitHub deployment identity](deploy-identity/README.md) is an independent
 Terraform root. `bootstrap/` creates the encrypted, versioned S3 state bucket;
-`deploy-identity/` stores its state in that bucket. The application stack remains
-in `envs/dev/` and is not applied by CI.
+`deploy-identity/` stores its state in that bucket. After the required `ci-gate`
+passes on a commit to `main`, `.github/workflows/infra-deploy.yml` applies the
+`envs/dev/` stack with GitHub OIDC and the S3 backend. It only runs for commits
+that change `infra/` or the deployment workflow. The job reads the AWS account
+contact email at runtime for budget notifications; it does not store the email
+in GitHub variables or the repository.
 
-1. Sign in with a non-root IAM or IAM Identity Center principal in the personal account. `./scripts/aws-finsig identity` must report account `623588627433` without the root warning. The wrapper checks account and principal before any Terraform command. The provider and S3 backend independently allow only this account. Raw `terraform` or `aws` in the directory does not automatically switch accounts.
+1. The CI deploy job assumes `arn:aws:iam::623588627433:role/finsig/FinSig_admin`. Its trust policy is restricted to GitHub Actions for `dmrvcodes/finsig` on `main`; AWS role credentials are short-lived OIDC credentials. For local Terraform work, use the project-scoped `./scripts/aws-finsig` wrapper. It checks the AWS account and blocks root credentials; raw `terraform` or `aws` does not automatically select the project account.
 2. From the repository root, run `./scripts/aws-finsig terraform -chdir=infra/bootstrap init`, then `plan`, then review and `apply`. This creates the S3 state bucket. Bootstrap's local state is gitignored; keep a secure backup of it. Do not delete the state bucket while other Terraform states exist.
 3. Copy `infra/envs/dev/backend.hcl.example` to `backend.hcl`, and `terraform.tfvars.example` to `terraform.tfvars`. Replace the example HTTPS origin and budget email with real values. An HTTPS origin is required for Cognito callbacks even though the app is not deployed yet.
-4. For the deploy identity, copy `infra/deploy-identity/backend.hcl.example` to `infra/deploy-identity/backend.hcl`, then run `./scripts/aws-finsig terraform -chdir=infra/deploy-identity init -backend-config=backend.hcl`. Its state is already migrated to S3. For the application stack, run `./scripts/aws-finsig terraform -chdir=infra/envs/dev init -backend-config=backend.hcl`, then `plan -out=dev.tfplan`. Review the resource list and costs before applying. Plan files are gitignored because they can contain sensitive infrastructure data.
+4. For the deploy identity, copy `infra/deploy-identity/backend.hcl.example` to `infra/deploy-identity/backend.hcl`, then run `./scripts/aws-finsig terraform -chdir=infra/deploy-identity init -backend-config=backend.hcl`. Its state is already migrated to S3. For local application-stack work, copy `infra/envs/dev/backend.hcl.example` to `infra/envs/dev/backend.hcl`, initialize with `-backend-config=backend.hcl`, then run `plan -out=dev.tfplan`. Review the resource list and costs before applying. Plan files are gitignored because they can contain sensitive infrastructure data.
 
 For syntax checks without AWS credentials, use `terraform -chdir=infra/bootstrap init -backend=false`, `terraform -chdir=infra/envs/dev init -backend=false`, then `terraform fmt -check -recursive infra` and `terraform -chdir=infra/envs/dev validate`. These commands do not create AWS resources.
 
