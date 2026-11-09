@@ -42,3 +42,4 @@ runs:
           terraform:
             - 'infra/**'
             - '.github/workflows/ci.yml'
+            - '.github/workflows/infra-deploy.yml'
