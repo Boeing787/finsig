@@ -39,7 +39,8 @@ passes on a commit to `main`, `.github/workflows/infra-deploy.yml` applies the
 `envs/dev/` stack with GitHub OIDC and the S3 backend. It only runs for commits
 that change `infra/` or the deployment workflow. Budget notifications use the
 `AWS_BUDGET_ALERT_EMAIL` GitHub Actions secret; the value is neither stored in
-Git nor printed in workflow logs.
+Git nor printed in workflow logs. The same workflow supports a manual recovery
+run from `main`; AWS and Render deployments are separate explicit inputs.
 
 1. The CI deploy job assumes `arn:aws:iam::623588627433:role/finsig/FinSig_admin`. Its trust policy is restricted to GitHub Actions for `dmrvcodes/finsig` on `main`; AWS role credentials are short-lived OIDC credentials. For local Terraform work, use the project-scoped `./scripts/aws-finsig` wrapper. It checks the AWS account and blocks root credentials; raw `terraform` or `aws` does not automatically select the project account.
 2. From the repository root, run `./scripts/aws-finsig terraform -chdir=infra/bootstrap init`, then `plan`, then review and `apply`. This creates the S3 state bucket. Bootstrap's local state is gitignored; keep a secure backup of it. Do not delete the state bucket while other Terraform states exist.
