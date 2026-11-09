@@ -19,6 +19,7 @@ coverage/
 **/*.tfplan
 **/crash.log
 infra/envs/*/backend.hcl
+infra/deploy-identity/backend.hcl
 infra/envs/*/terraform.tfvars
 
 # OS and editor files

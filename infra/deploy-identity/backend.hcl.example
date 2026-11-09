@@ -1,0 +1,5 @@
+bucket       = "finsig-tfstate-623588627433-eu-central-1"
+key          = "deploy-identity/terraform.tfstate"
+region       = "eu-central-1"
+use_lockfile = true
+encrypt      = true

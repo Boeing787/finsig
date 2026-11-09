@@ -1,20 +1,32 @@
-# 8 November vertical slice
+# FinSig hosted vertical slice
 
-The local data path is: PayPal first-party sandbox Reporting → PostgreSQL raw records → deterministic event classification → confirmed activity → cash and per-hour calculations. This is a development build, not a hosted demo.
+FinSig is a judge-facing financial analytics demo for independent professionals. The public app is deployed at <https://finsig-demo.onrender.com/demo> and uses synthetic workspace data. It does not expose the local PayPal sandbox database.
 
-## Observed sandbox check
+## Judge path
 
-On 7 November, the first import fetched three records and inserted three. The second import fetched the same three and inserted zero. The records were a `T0006` sale of USD 5.00 with fee USD -0.66, a `T1107` refund of USD -1.00 referencing the sale, and a `T1900` account correction of USD 5000.00. The correction remained in review and did not enter commercial revenue.
+1. **Overview:** inspect September to October change, the deterministic cash bridge and source-grounded AI explanation.
+2. **Activities:** ask AI to suggest a category for the unassigned consulting receipt, inspect the evidence and confirm the assignment. The linked refund inherits the confirmed activity. Hours and known direct costs change contribution per hour.
+3. **Manager:** inspect the deterministic 30-day scenario and cash trend alert.
+4. **Sources:** inspect normalized synthetic records, including the `T1900` correction excluded from revenue. Reset clears the browser-local demo state.
 
-The cash calculation was USD 5.00 − USD 1.00 − USD 0.66 = USD 3.34. After explicitly assigning the sale to `Sandbox test`, another import proposed the same activity for the linked refund. Both records were confirmed. With 2.00 hours and USD 0.50 known direct costs, the activity contribution was USD 2.84, net receipts per hour USD 1.67, and contribution per hour USD 1.42. These hours and costs are test inputs, not observations from PayPal.
+## AI and deterministic boundaries
 
-## Boundaries
+- Classification returns a record ID, activity ID, cited evidence fields and a follow-up question. The server validates the output against the fixed demo records and categories; the person confirms the assignment.
+- Explanation returns claims linked to metric IDs and source record IDs. Server validation rejects unknown metrics, unrelated records and unverified amounts before claims are shown.
+- The AI API accepts only two fixed tasks (`classify` and `explain`); it does not accept arbitrary prompts. The Anthropic key remains server-side.
+- Deterministic code calculates the cash bridge, refunds, fees, contribution per hour and 30-day scenario. AI does not edit calculations or persist user choices.
+- Demo changes are stored in browser local storage. The server API only returns fixed synthetic data and validated AI responses.
 
-- The PayPal app credentials belong to the first-party sandbox merchant. Partner Referrals and delegated access are not implemented.
-- Amounts are stored as signed integer cents for USD. Other currencies currently fail the importer until their minor-unit rules are added. They are never silently converted or combined.
-- The cash summary counts only successful (`S`) `T0006` positive receipts and `T1107` negative refunds. Other T-codes remain in review. The list of commercial event codes must expand before general use.
-- Activity suggestions are deterministic from an exact `activity:<name>` transaction subject or a refund that references a confirmed sale. The AI classifier and its evidence workflow are future work.
-- The CLI has no user authentication and the local PostgreSQL contains source records that may include personal data. Do not deploy or share its database as a judge-facing service.
-- The next vertical slice needs hosted authentication, an application UI, a proper merchant-connection model, and a broader import window with overlap and scheduling.
+## PayPal sandbox verification
 
-Reference: [PayPal transaction event codes](https://developer.paypal.com/reports/reference/t-codes/).
+The separate local CLI imports first-party PayPal Transaction Search data into PostgreSQL. On 7 November, two imports produced three fetched rows each, with three inserted on the first and zero on the second. The USD 5.00 sale, USD 1.00 refund and USD 0.66 fee yielded USD 3.34 cash. The USD 5,000.00 account correction remained in review. See [reporting-gate.md](reporting-gate.md) for sanitized event evidence.
+
+This is a first-party sandbox connection. Partner Referrals and delegated merchant access are not implemented; the current account-access limitation from Ukraine remains. The public demo uses synthetic data and does not read personal PayPal records.
+
+## Limits
+
+- The public workspace is a shared synthetic demonstration. Choices live in each browser's local storage, not in separate server-side user accounts.
+- The importer currently calculates USD receipts for `T0006` and refunds for `T1107`; unknown event families remain in review. Non-USD records are not converted or combined.
+- The 10-cycle production smoke check in [nov9-evidence.md](nov9-evidence.md) exercises HTTP routes and API schemas. It is not a substitute for a human interaction test of browser local storage, and this document does not claim that interaction test was automated.
+
+References: [PayPal transaction event codes](https://developer.paypal.com/reports/reference/t-codes/).
