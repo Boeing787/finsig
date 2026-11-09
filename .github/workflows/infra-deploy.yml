@@ -89,6 +89,7 @@ jobs:
       TF_INPUT: 'false'
       TF_VAR_app_base_url: https://finsig-demo.onrender.com
       TF_VAR_monthly_budget_usd: '100'
+      TF_VAR_budget_alert_email: ${{ secrets.AWS_BUDGET_ALERT_EMAIL }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -98,7 +99,7 @@ jobs:
           role-to-assume: arn:aws:iam::623588627433:role/finsig/FinSig_admin
           role-session-name: finsig-main-infra-deploy
           aws-region: eu-central-1
-      - name: Validate AWS identity and load budget contact
+      - name: Validate AWS identity and budget alert configuration
         shell: bash
         run: |
           set -euo pipefail
@@ -108,18 +109,10 @@ jobs:
             exit 1
           }
 
-          # Read the account contact at runtime so its email is not stored in GitHub.
-          budget_email="$(aws account get-contact-information \
-            --account-id "$account_id" \
-            --region us-east-1 \
-            --query 'ContactInformation.EmailAddress' \
-            --output text)"
-          if [[ ! "$budget_email" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
-            echo 'AWS account contact email is unavailable; Terraform budget alerts cannot be configured.' >&2
+          if [[ ! "${TF_VAR_budget_alert_email:-}" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
+            echo 'Set the AWS_BUDGET_ALERT_EMAIL GitHub Actions secret before merging infrastructure changes.' >&2
             exit 1
           fi
-          echo "::add-mask::$budget_email"
-          printf 'TF_VAR_budget_alert_email=%s\n' "$budget_email" >> "$GITHUB_ENV"
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
           terraform_version: 1.15.5
