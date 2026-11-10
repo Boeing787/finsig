@@ -60,6 +60,38 @@ while (Date.now() < deadline) {
   }
   if (current.status === 'live') {
     const origin = 'https://finsig-demo.onrender.com';
+    const smokeDeadline = Date.now() + 3 * 60_000;
+
+    async function expectEventually(
+      path,
+      expected,
+      validate = (response) => response.status === expected,
+    ) {
+      let lastResult = 'no response';
+      let lastLoggedResult = '';
+
+      while (Date.now() < smokeDeadline) {
+        try {
+          const response = await fetch(`${origin}${path}`, {
+            redirect: 'manual',
+            signal: AbortSignal.timeout(30_000),
+          });
+          lastResult = `HTTP ${response.status}`;
+          if (validate(response)) return response;
+        } catch (error) {
+          lastResult = error instanceof Error ? error.message : 'unknown network error';
+        }
+
+        if (lastResult !== lastLoggedResult) {
+          console.log(`Waiting for production smoke check ${path}: ${lastResult}.`);
+          lastLoggedResult = lastResult;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5_000));
+      }
+
+      throw new Error(`Smoke check ${path} did not become ready; last result: ${lastResult}.`);
+    }
+
     const checks = [
       { path: '/', status: 200 },
       { path: '/login', status: 200 },
@@ -67,27 +99,14 @@ while (Date.now() < deadline) {
       { path: '/app', status: 307 },
       { path: '/api/paypal/sync', status: 401 },
     ];
-    for (const check of checks) {
-      const response = await fetch(`${origin}${check.path}`, {
-        redirect: 'manual',
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (response.status !== check.status) {
-        throw new Error(
-          `Smoke check ${check.path} returned HTTP ${response.status}; expected ${check.status}.`,
-        );
-      }
-    }
-    const legacyStudio = await fetch(`${origin}/demo/studio`, {
-      redirect: 'manual',
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (
-      legacyStudio.status !== 307 ||
-      new URL(legacyStudio.headers.get('location') ?? '/', origin).pathname !== '/app/studio'
-    ) {
-      throw new Error('Legacy Studio URL does not redirect to /app/studio.');
-    }
+    await Promise.all(checks.map(({ path, status }) => expectEventually(path, status)));
+    await expectEventually(
+      '/demo/studio',
+      307,
+      (response) =>
+        response.status === 307 &&
+        new URL(response.headers.get('location') ?? '/', origin).pathname === '/app/studio',
+    );
     console.log('Production route smoke checks passed.');
     process.exit(0);
   }
