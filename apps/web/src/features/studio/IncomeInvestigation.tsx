@@ -339,8 +339,9 @@ function InvestigationView({ period, records }: { period: string; records: Analy
               primary: 'lead',
               promptStarters: [
                 {
-                  label: 'Explain this change',
-                  prompt: `${facts.question} Use the verified bridge, verify the arithmetic and cite the source records.`,
+                  label: 'Show the fee factor',
+                  prompt:
+                    'Add a column chart of PayPal fee (USD) by client, grouped by month, so the fee factor in the bridge is visible.',
                 },
                 {
                   label: 'Compare clients by month',

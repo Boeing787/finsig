@@ -1886,6 +1886,12 @@ ol {
 .tx-summary strong.is-in {
   color: var(--fs-success);
 }
+.tx-scope {
+  margin-top: -6px;
+  color: var(--fs-ink-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
 .tx-card {
   padding: 16px;
 }

@@ -123,6 +123,8 @@ function systemPrompt(request: AgLlmRequest): string {
     ...systemMessages,
     structured,
     'FinSig rule: never invent, estimate, or modify a financial amount. Use Studio tools and the supplied schema. Preserve record-level traceability.',
+    'FinSig rule: in chat, state an amount only when a Studio tool returned it in this conversation, and prefer pointing to the widget that shows it. The verified explanation of why income changed is the bridge widget; do not write your own.',
+    'FinSig rule: the data is the fictional sample history of a demo freelancer. Live PayPal sandbox records are not in it. Never describe it as real, actual or live PayPal income.',
   ]
     .filter(Boolean)
     .join('\n\n');

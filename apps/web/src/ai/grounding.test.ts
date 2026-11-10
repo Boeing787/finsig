@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { recordById } from '../domain/workspace';
-import { groundedMetrics, validateAnswer, validateClassification } from './grounding';
+import { PERIODS, recordById, workspaceRecords } from '../domain/workspace';
+import {
+  buildAnswerRequest,
+  groundedMetrics,
+  hasUnverifiedQuantity,
+  validateAnswer,
+  validateClassification,
+} from './grounding';
 
 test('classification rejects wrong record and unsupported evidence', () => {
   const record = recordById.get('pp-2026-10-atlas')!;
@@ -67,4 +73,64 @@ test('metric catalogue values are rendered by code', () => {
   assert.equal(metrics.get('net:2026-10')?.value, '$5,300.85');
   assert.equal(metrics.get('net_delta')?.value, '-$3,527.36');
   assert.equal(metrics.get('client_delta:lumen')?.value, '-$2,500.00');
+});
+
+test('claim prose cannot state a quantity in words either', () => {
+  // Phrases the model produced in a live audit, each an unverified number.
+  for (const text of [
+    'Northstar accounts for more than two-fifths of your gross.',
+    'October reached just under nine-tenths of the target.',
+    'The set-aside is a quarter of your profit after expenses.',
+    'Gross receipts came from five client transactions.',
+    'Your top two clients represent most of your revenue.',
+    'Fees were twice as high in September.',
+    'Income fell by several thousand dollars.',
+    'Income fell by forty percent.',
+  ]) {
+    assert.equal(hasUnverifiedQuantity(text), true, text);
+  }
+  // Qualitative comparisons, ranks and time windows stay allowed.
+  for (const text of [
+    'Kestrel Analytics was the second-largest drag on the change.',
+    'Northstar holds the largest share of twelve-month gross.',
+    'The three-month average stays above the goal.',
+    'Adding one more client in that tier would reduce concentration.',
+    'Lumen Health sent no payment this month, the biggest driver of the decline.',
+  ]) {
+    assert.equal(hasUnverifiedQuantity(text), false, text);
+  }
+  const metrics = groundedMetrics('2026-10');
+  assert.throws(() =>
+    validateAnswer(
+      {
+        unsupported: false,
+        claims: [
+          {
+            text: 'Your top two clients bring in most of your gross.',
+            metric_ids: ['client_share:northstar'],
+            record_ids: [],
+          },
+        ],
+      },
+      metrics,
+    ),
+  );
+});
+
+test('AI context contains only the sample history and says so', () => {
+  const sampleIds = new Set(workspaceRecords.map((record) => record.id));
+  for (const period of PERIODS) {
+    const { metrics, request } = buildAnswerRequest('Why did income change?', period);
+    for (const metric of metrics) {
+      for (const id of metric.recordIds) assert.ok(sampleIds.has(id), `${metric.id} cites ${id}`);
+    }
+    const records = (JSON.parse(request.user) as { records: { id: string }[] }).records;
+    assert.ok(records.every((record) => sampleIds.has(record.id)));
+    const scope = metrics.find((metric) => metric.id === 'data_scope');
+    assert.match(
+      scope?.value ?? '',
+      /sample history only; live PayPal sandbox records are excluded/u,
+    );
+    assert.match(request.system, /not real, actual or live PayPal income/u);
+  }
 });

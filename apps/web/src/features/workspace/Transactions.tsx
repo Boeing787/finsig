@@ -438,12 +438,16 @@ export function Transactions({
     [allRows],
   ) as Record<Filter, number>;
 
+  // Live sandbox records are listed beside the sample history but never added to its totals.
+  const liveScope = filter === 'live';
   const totals = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const visible = rows.filter(
-      (row) => row.counted && (!needle || searchText(row).toLowerCase().includes(needle)),
+    const matching = rows.filter(
+      (row) => !needle || searchText(row).toLowerCase().includes(needle),
     );
+    const visible = matching.filter((row) => row.counted && row.live === liveScope);
     return {
+      excludedLive: liveScope ? 0 : matching.filter((row) => row.live).length,
       count: visible.length,
       inflow: visible
         .filter((row) => row.kind === 'sale')
@@ -456,7 +460,7 @@ export function Transactions({
         .filter((row) => row.kind === 'expense' || row.kind === 'refund')
         .reduce((sum, row) => sum + row.amount, 0),
     };
-  }, [rows, query]);
+  }, [rows, query, liveScope]);
 
   /** Highlight the open record in the ledger and bring its page and row into view. */
   const revealSelection = useCallback(() => {
@@ -651,6 +655,14 @@ export function Transactions({
           <strong>{usd(totals.outflow)}</strong>
         </div>
       </div>
+
+      <p className="tx-scope">
+        {liveScope
+          ? 'Totals cover live PayPal sandbox records only. They are never added to the sample history.'
+          : totals.excludedLive
+            ? `Totals cover the fictional sample history. The ${totals.excludedLive} live sandbox record${totals.excludedLive === 1 ? ' is' : 's are'} listed below but not counted.`
+            : 'Totals cover the fictional sample history.'}
+      </p>
 
       {filter === 'live' ? <LiveBanner live={live} /> : null}
 
