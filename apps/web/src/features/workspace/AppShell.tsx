@@ -32,7 +32,7 @@ import {
   unassignedSales,
   type Period,
 } from '../../domain/workspace';
-import { BrandMark } from '../auth/Logo';
+import { BrandMark, Logo } from '../auth/Logo';
 import { OverlayProvider, Scrim, useOverlay } from './overlay';
 import { useWorkspace } from './WorkspaceProvider';
 
@@ -126,11 +126,9 @@ function Sidebar() {
       <div className="sidebar__panel">
         <div className="sidebar__brand">
           <Link href="/app" aria-label="FinSig dashboard" className="sidebar__logo">
-            <BrandMark size={38} />
-            <span>
-              <strong>FinSig</strong>
-              <small>Freelance finance</small>
-            </span>
+            <Logo height={30} />
+            <BrandMark size={46} className="sidebar__mark" />
+            <small>Freelance finance</small>
           </Link>
           <button
             type="button"
@@ -241,7 +239,7 @@ function Topbar() {
         >
           <Menu size={18} />
         </button>
-        <BrandMark size={32} />
+        <BrandMark size={34} />
         <strong>{page?.label ?? 'FinSig'}</strong>
       </div>
       <form className="topbar__search" role="search" onSubmit={onSearch}>

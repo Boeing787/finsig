@@ -16,6 +16,22 @@ glass cards and dense, chart-led widgets.
 - Manrope for display figures, DM Sans for body and data, tabular numbers everywhere;
 - 12/16/24/32 px radius scale, pill controls, soft layered shadows.
 
+## Logo
+
+The logo is a blue swoosh and a lowercase "finsig" wordmark, traced to vector paths from the
+supplied artwork. The paths live in `apps/web/src/features/auth/brandPaths.ts`.
+
+- `Logo` renders the full lockup and `BrandMark` renders the swoosh alone (icon rail, mobile top
+  bar). Colours come from `--fs-logo-mark` (`#0E13F1`) and `--fs-logo-ink` (`#040C30`).
+  `Logo light` is all white for the brand gradient panels. The logo blue belongs to the logo only;
+  UI accents keep `--fs-brand`.
+- Static files for README, Devpost and slides: `public/brand/finsig-logo.svg`,
+  `finsig-logo-white.svg` and `finsig-mark.svg`.
+- Browser icons use the Next file conventions:
+  - `app/icon.svg`, which switches to `#8D98FF` in dark mode;
+  - `app/favicon.ico` at 16, 32 and 48px;
+  - `app/apple-icon.png`, the mark on white at 180px.
+
 ## Charts
 
 `packages/ui/src/charts` contains dependency-free SVG charts measured to their container:

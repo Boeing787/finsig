@@ -18,7 +18,7 @@ export function LoginScreen({
     <div className="login">
       <section className="login__story" aria-label="About FinSig">
         <Link href="/" aria-label="FinSig home">
-          <Logo light />
+          <Logo light height={32} />
         </Link>
         <div className="login__pitch">
           <p className="login__kicker">For freelancers paid through PayPal</p>

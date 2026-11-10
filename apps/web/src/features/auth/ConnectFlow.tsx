@@ -127,7 +127,7 @@ export function ConnectFlow({
   return (
     <div className="connect">
       <div className="connect__card">
-        <Logo />
+        <Logo height={30} />
         <h1>{done ? 'Your workspace is ready' : 'Preparing your finance workspace'}</h1>
         <p>
           {mode === 'paypal'

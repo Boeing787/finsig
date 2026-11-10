@@ -37,7 +37,7 @@ export default function HomePage() {
   return (
     <main className="landing">
       <header className="landing__nav">
-        <Logo />
+        <Logo height={32} />
         <nav>
           <a href="https://github.com/dmrvcodes/finsig" target="_blank" rel="noreferrer">
             GitHub

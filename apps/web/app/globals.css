@@ -80,19 +80,23 @@ ol {
 
 /* Brand ------------------------------------------------------------------------------------ */
 .brand-mark {
+  display: block;
   flex: none;
-  filter: drop-shadow(0 8px 16px rgb(79 93 240 / 28%));
+  fill: var(--fs-logo-mark);
 }
 .logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--fs-ink-strong);
-  font: 800 20px var(--fs-font-display);
-  letter-spacing: -0.03em;
+  display: block;
+  flex: none;
 }
-.logo.is-light {
-  color: white;
+.logo__mark {
+  fill: var(--fs-logo-mark);
+}
+.logo__word {
+  fill: var(--fs-logo-ink);
+}
+.logo.is-light .logo__mark,
+.logo.is-light .logo__word {
+  fill: #ffffff;
 }
 
 /* Shared atoms ----------------------------------------------------------------------------- */
@@ -391,23 +395,25 @@ ol {
   padding: 0 4px;
 }
 .sidebar__logo {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-.sidebar__logo span {
   display: grid;
-  line-height: 1.1;
+  justify-items: start;
+  gap: 6px;
+  border-radius: var(--fs-radius-sm);
+  padding: 4px 2px;
 }
-.sidebar__logo strong {
-  color: var(--fs-ink-strong);
-  font: 800 19px var(--fs-font-display);
-  letter-spacing: -0.035em;
+.sidebar__logo:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--fs-focus) 30%, transparent);
+  outline-offset: 2px;
 }
 .sidebar__logo small {
+  padding-left: 2px;
   color: var(--fs-ink-muted);
   font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.sidebar__mark {
+  display: none;
 }
 .sidebar__close {
   display: none;
@@ -3249,12 +3255,16 @@ ol {
     align-items: center;
     padding: 16px 8px 12px;
   }
-  .sidebar__logo span,
+  .sidebar__logo .logo,
+  .sidebar__logo small,
   .sidebar__label,
   .sidebar__text,
   .sidebar__badge.is-tag,
   .sidebar__sync svg {
     display: none;
+  }
+  .sidebar__mark {
+    display: block;
   }
   .sidebar__link {
     justify-content: center;
