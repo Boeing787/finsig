@@ -5,22 +5,30 @@ The source of truth is `packages/ui`.
 
 ## Direction
 
-The system combines the quiet editorial tone of the Synais finance reference with the density of
-the supplied dashboard references:
+The system follows the supplied fintech dashboard references: a soft periwinkle canvas, frosted
+glass cards and dense, chart-led widgets.
 
-- warm neutral canvas and white raised surfaces;
-- olive as the primary action and focus colour;
-- muted violet only for AI surfaces;
-- red and green reserved for financial direction and status;
-- Manrope for display typography, DM Sans for body and data;
-- 10/14/20/28 px radius scale and low-contrast borders instead of heavy shadows;
-- tabular numbers, restrained gradients, and large whitespace around financial signals.
+- cool lavender-blue canvas with radial light, frosted white cards (`backdrop-filter`);
+- indigo gradient (`--fs-gradient-brand`) for the selected bar, the primary balance bubble and
+  trend cards; near-black pill buttons for primary actions;
+- violet only for AI surfaces (`--fs-gradient-ai`), so colour never implies model output is verified;
+- green and red reserved for financial direction and status;
+- Manrope for display figures, DM Sans for body and data, tabular numbers everywhere;
+- 12/16/24/32 px radius scale, pill controls, soft layered shadows.
+
+## Charts
+
+`packages/ui/src/charts` contains dependency-free SVG charts measured to their container:
+`BarChart` (selectable months with a floating value pill), `AreaChart` (monotone cubic line with
+gradient fill and hover readout), `Gauge`, `Donut`, `Sparkline` and a horizontal `Waterfall` that
+floats each step from the running total so the bridge reconciles visually. The transactions ledger
+uses AG Grid Community with the same tokens; the report builder uses AG Studio.
 
 ## Package boundary
 
 `generic/` contains unopinionated controls: `Button`, `Badge`, `Input`, and `Select`.
 
-`kit/` contains FinSig compositions: `Card`, `StatCard`, and `DataTable`. `DataTable` uses
+`kit/` contains FinSig compositions: `Card`, `StatCard`, and `DataTable`. `charts/` contains the SVG charts. `DataTable` uses
 TanStack Table for application workflows and supports sorting, global filtering, persisted column
 visibility, persisted widths, resizing, a sticky first column, and row actions. It is not used as a
 substitute for AG Studio; AG Studio owns the interactive report-building surface.

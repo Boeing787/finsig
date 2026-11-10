@@ -8,6 +8,7 @@ import type {
   AgLlmResponse,
 } from 'ag-studio';
 import { z } from 'zod';
+import { readSessionToken, SESSION_COOKIE } from '../../../../src/auth/session';
 
 export const runtime = 'nodejs';
 
@@ -171,6 +172,8 @@ let windowStartedAt = Date.now();
 let requestCount = 0;
 
 export async function POST(request: NextRequest) {
+  const session = await readSessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+  if (!session) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
   const body = await request.text();
   if (body.length > 500_000) {
     return NextResponse.json({ error: 'Studio AI request is too large.' }, { status: 413 });

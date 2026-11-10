@@ -18,15 +18,23 @@ export function NetChangeBridgeWidget({
     <section className="fs-bridge-widget" aria-label="Net income change reconciliation">
       <header>
         <div>
-          <p>Verified bridge</p>
+          <p>
+            Verified bridge · {context.previousLabel} → {context.periodLabel}
+          </p>
           <h3>Why net income changed</h3>
         </div>
-        <strong>{usd.format(context.deltaUsd)}</strong>
+        <strong className={context.deltaUsd < 0 ? 'is-negative' : 'is-positive'}>
+          {usd.format(context.deltaUsd)}
+        </strong>
       </header>
       <div className="fs-bridge-widget__range">
         <span>{usd.format(context.previousNetUsd)}</span>
         <div aria-hidden="true">
-          <i />
+          <i
+            style={{
+              width: `${Math.min(100, (context.currentNetUsd / Math.max(context.previousNetUsd, context.currentNetUsd, 1)) * 100)}%`,
+            }}
+          />
         </div>
         <span>{usd.format(context.currentNetUsd)}</span>
       </div>

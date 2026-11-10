@@ -26,4 +26,6 @@ export type FinSigStudioContext = {
   currentNetUsd: number;
   deltaUsd: number;
   previousNetUsd: number;
+  periodLabel: string;
+  previousLabel: string;
 };

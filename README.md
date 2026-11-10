@@ -1,26 +1,80 @@
 # FinSig
 
-FinSig turns PayPal activity, work time, and known costs into explainable financial
-signals for independent professionals.
+FinSig is a financial cockpit demo for freelancers who get paid through PayPal. Its dashboard and AI
+insights use a fictional 12-month sample history. PayPal sandbox OpenID Connect verifies a sign-in
+identity; it does not grant access to that person's transaction history. Separately, when configured,
+PayPal Transaction Search reads the sandbox merchant attached to FinSig's developer app. Those live
+records are labelled and shown separately from the sample analytics. Claude explains and categorises;
+code calculates every amount and every AI claim must cite verified metrics and source record IDs.
 
 ## Judge path
 
-The [interactive demo](https://finsig-demo.onrender.com/demo) needs no login and uses a fictional
-workspace. The [AG Studio income control room](https://finsig-demo.onrender.com/demo/studio) is the
-primary judge path. For local development, run `pnpm dev` and open `http://localhost:3000/demo`.
+Open the [live app](https://finsig-demo.onrender.com) → **Explore the demo workspace** (or go
+straight to [/demo](https://finsig-demo.onrender.com/demo)). No credentials are needed; the demo
+workspace is a fictional freelancer with twelve months of PayPal-shaped records. Locally, run
+`pnpm dev` and open `http://localhost:3000`.
 
-1. **AG Studio:** open the report builder, inspect the custom net-change bridge and source ledger,
-   then ask the built-in agent to explain the decline and show the evidence. Switch to edit mode to
-   resize, configure, and add widgets; use **Reset demo** to restore the authored report.
-2. **Overview:** compare September and October, inspect the exact cash bridge, then ask Claude for a source-grounded explanation.
-3. **Activities:** ask Claude to classify the unassigned receipt; inspect its evidence and confirm the suggestion yourself. The linked refund follows that assignment. Edit hours and known costs to see the contribution per hour change.
-4. **Manager:** inspect the deterministic 30-day run-rate scenario and the cash-trend alert.
-5. **Sources:** inspect the normalized records, including the `T1900` account correction excluded from revenue.
+1. **Sign in & sync.** The sign-in screen offers _Continue with PayPal_ (OpenID Connect identity
+   verification, sandbox) and a one-click demo. The sync screen shows the configured app merchant's
+   live read, if available, and separate checks against the fictional sample history. AI suggestions
+   run only after the judge chooses _Suggest with AI_.
+2. **Dashboard.** Sample balance (available / pending / tax reserve), KPI cards with sparklines, a
+   12-month cash-flow chart (click any month to re-run every widget), effective-hourly-rate trend,
+   client mix, monthly goal gauge, upcoming invoices and the latest sample activity.
+3. **Needs a category.** Click _Suggest with AI_ on an unassigned payment. Claude proposes an activity
+   with quoted PayPal fields; you confirm. The linked refund follows and per-hour figures change.
+4. **AI Insights.** Ask _“Why did the sample net income change this month?”_. Each claim shows the
+   code-rendered sample metrics it relies on and links to the source records behind it. The exact bridge,
+   the income-health score and the 30-day plan sit below; edit hours to see the rates move.
+5. **Transactions.** An AG Grid ledger with filters, search, CSV export and a source drawer for every
+   record. The _Live sandbox_ filter shows records read live from the sandbox merchant configured
+   for FinSig.
+6. **Studio.** AG Studio report builder on the same ledger: resize, configure and add widgets, or ask
+   the agent to explain the decline. The custom bridge widget only accepts code-verified amounts.
+7. **Security.** What FinSig can read, what it can never do, and where data lives.
 
-The public demo contains synthetic records and stores each visitor's choices in that browser's local storage. The actual PayPal integration is a first-party sandbox Transaction Search importer. Its [capture/refund verification log](docs/reporting-gate.md) records the observed API events and fee. FinSig does not connect arbitrary PayPal accounts from Ukraine. The Anthropic API key is server-only; AI suggests a category, operates AG Studio through the Agent Framework, and ranks explanations, while code calculates money, validates references and requires human confirmation. See the [AG Studio implementation notes](docs/ag-studio.md) and [FinSig design system](docs/design-system.md).
+## PayPal integration
 
-Current integration is first-party Transaction Search for the configured sandbox merchant.
-The CLI below is a local development path for real sandbox records.
+- **Log in with PayPal** (`/api/auth/paypal/start` → `/api/auth/paypal/callback`): OpenID Connect
+  authorisation-code flow with a `state` cookie. The code is exchanged server-side, the profile is
+  read once, and the PayPal access token is discarded. FinSig stores only an 8-hour, HMAC-signed,
+  httpOnly session cookie.
+- **Transaction Search** (`/api/paypal/sync`): live, read-only reads using the developer app's
+  client credentials for its configured sandbox merchant over the last 90 days in 30-day windows,
+  normalised by the same code as the importer. This API credential is not delegated from the
+  PayPal identity that signed in.
+  Buyer names, emails and raw transaction IDs never leave the server.
+- **Importer CLI**: the original first-party sandbox importer with idempotent composite keys, see
+  below and the [capture/refund verification log](docs/reporting-gate.md).
+
+FinSig does not connect arbitrary PayPal accounts: delegated merchant onboarding is not available
+from Ukraine, so live reads cover the sandbox merchant attached to the app. The demo workspace uses
+fictional records with the same pipeline.
+
+## AI
+
+The Anthropic key is server-only. Claude (1) suggests an activity for unassigned receipts from quoted
+PayPal fields, (2) answers free-form questions by choosing among ~60 code-calculated metrics — claims
+containing digits or currency symbols, unknown metric IDs, or records outside the cited metrics are
+rejected — and (3) operates AG Studio through the Agent Framework. The person's own confirmations,
+hours and preferences are validated server-side and used only to recompute metrics in code.
+
+### Configuration
+
+| Variable                                                   | Purpose                                                                               |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`                     | Server-only Claude access                                                             |
+| `PAYPAL_SANDBOX_CLIENT_ID`, `PAYPAL_SANDBOX_CLIENT_SECRET` | Sandbox REST app with Transaction Search (enables live sync)                          |
+| `PAYPAL_LOGIN_ENABLED=true`                                | Turns on _Continue with PayPal_ once _Log in with PayPal_ is enabled for the app      |
+| `APP_BASE_URL`                                             | Public origin used for the PayPal return URL, e.g. `https://finsig-demo.onrender.com` |
+| `SESSION_SECRET`                                           | 32+ character HMAC key for sessions (derived from another server secret if unset)     |
+| `NEXT_PUBLIC_AG_STUDIO_LICENSE_KEY`                        | AG Studio client license string                                                       |
+
+To enable PayPal sign-in: in the PayPal developer dashboard open the sandbox app → **Log in with
+PayPal** → enable it, request _Full name_ and _Email_, and add the return URL
+`${APP_BASE_URL}/api/auth/paypal/callback`. Sign in with a sandbox **personal** account.
+
+See the [AG Studio implementation notes](docs/ag-studio.md) and [FinSig design system](docs/design-system.md).
 
 ## Workspace
 
@@ -72,7 +126,7 @@ GitHub Actions classifies changes, runs formatting, lint and type checks, then
 selectively runs tests, build, Flyway migration checks and Terraform validation.
 The single `ci-gate` job fails if a required check fails. A successful `main`
 push triggers [Render deployment](.github/workflows/infra-deploy.yml) of that
-exact commit, followed by an HTTP smoke check of `/demo`. A newer `main` commit
+exact commit, followed by an HTTP smoke check of `/demo` (the static demo entry page). A newer `main` commit
 supersedes an older deployment. Configure `RENDER_API_KEY` as a repository secret
 and `RENDER_SERVICE_ID` as a repository variable; do not commit either key.
 

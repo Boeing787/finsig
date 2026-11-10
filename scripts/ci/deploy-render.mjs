@@ -59,11 +59,36 @@ while (Date.now() < deadline) {
     lastStatus = current.status;
   }
   if (current.status === 'live') {
-    const response = await fetch('https://finsig-demo.onrender.com/demo', {
+    const origin = 'https://finsig-demo.onrender.com';
+    const checks = [
+      { path: '/', status: 200 },
+      { path: '/login', status: 200 },
+      { path: '/demo', status: 200 },
+      { path: '/app', status: 307 },
+      { path: '/api/paypal/sync', status: 401 },
+    ];
+    for (const check of checks) {
+      const response = await fetch(`${origin}${check.path}`, {
+        redirect: 'manual',
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (response.status !== check.status) {
+        throw new Error(
+          `Smoke check ${check.path} returned HTTP ${response.status}; expected ${check.status}.`,
+        );
+      }
+    }
+    const legacyStudio = await fetch(`${origin}/demo/studio`, {
+      redirect: 'manual',
       signal: AbortSignal.timeout(30_000),
     });
-    if (!response.ok) throw new Error(`Demo smoke check returned HTTP ${response.status}.`);
-    console.log('Demo smoke check passed.');
+    if (
+      legacyStudio.status !== 307 ||
+      new URL(legacyStudio.headers.get('location') ?? '/', origin).pathname !== '/app/studio'
+    ) {
+      throw new Error('Legacy Studio URL does not redirect to /app/studio.');
+    }
+    console.log('Production route smoke checks passed.');
     process.exit(0);
   }
   if (failures.has(current.status)) throw new Error(`Render deploy failed: ${current.status}.`);

@@ -28,7 +28,7 @@ export async function structuredMessage<T>(input: {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 800,
+      max_tokens: 2_000,
       system: input.system,
       messages: [{ role: 'user', content: input.user }],
       output_config: { format: { type: 'json_schema', schema: input.schema } },

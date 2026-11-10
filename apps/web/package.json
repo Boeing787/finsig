@@ -9,7 +9,7 @@
     "start": "node ../../scripts/next-with-env.mjs start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node --import tsx --test src/domain/*.test.ts src/ai/*.test.ts",
+    "test": "node --import tsx --test src/domain/*.test.ts src/ai/*.test.ts src/auth/*.test.ts",
     "paypal:import": "node --env-file=../../.env.local --import tsx src/cli.ts import",
     "finsig:records": "node --env-file=../../.env.local --import tsx src/cli.ts records",
     "finsig:summary": "node --env-file=../../.env.local --import tsx src/cli.ts summary",
@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@finsig/ui": "workspace:*",
+    "ag-grid-community": "36.3.0",
+    "ag-grid-react": "36.3.0",
     "ag-studio": "^3.1.0",
     "ag-studio-react": "^3.1.0",
     "decimal.js": "^10.6.0",
@@ -30,8 +32,8 @@
   },
   "devDependencies": {
     "@finsig/eslint-config": "workspace:*",
-    "@tailwindcss/postcss": "^4.3.5",
     "@finsig/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.18.0",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.1.12",

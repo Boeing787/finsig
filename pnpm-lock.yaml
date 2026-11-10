@@ -23,6 +23,12 @@ importers:
       '@finsig/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      ag-grid-community:
+        specifier: 36.3.0
+        version: 36.3.0
+      ag-grid-react:
+        specifier: 36.3.0
+        version: 36.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       ag-studio:
         specifier: ^3.1.0
         version: 3.1.0

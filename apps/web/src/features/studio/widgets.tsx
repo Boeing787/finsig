@@ -6,7 +6,7 @@ import { NetChangeBridgeWidget } from './NetChangeBridgeWidget';
 import type { FinSigStudioRegistry } from './types';
 
 function SourceLinkRenderer({ value }: AgWidgetCustomCellRendererProps) {
-  if (typeof value !== 'string' || !value.startsWith('/demo')) return String(value ?? '');
+  if (typeof value !== 'string' || !value.startsWith('/app/')) return String(value ?? '');
   return (
     <a className="fs-studio-source-link" href={value}>
       Open record
@@ -47,7 +47,10 @@ export const finSigWidgets = createWidgets<FinSigStudioRegistry>({
   defaultType: 'grid',
   menu: [
     { label: 'FinSig', widgetIds: ['finsig-net-change-bridge'] },
-    { label: 'Financial overview', widgetIds: ['value', 'column-chart-grouped', 'line-chart'] },
+    {
+      label: 'Financial overview',
+      widgetIds: ['value', 'column-chart-grouped', 'line-chart', 'donut-chart'],
+    },
     { label: 'Evidence', widgetIds: ['grid', 'pivot-grid'] },
   ],
 });

@@ -1,7 +1,9 @@
 # AG Studio implementation
 
-The public control room is `/demo/studio`. It demonstrates AG Studio as a product capability, not a
-decorative chart dependency.
+The report builder is `/app/studio`, inside the signed-in workspace (the old `/demo/studio` URL
+redirects there). It demonstrates AG Studio as a product capability, not a decorative chart
+dependency. The ledger declares explicit field formats so amounts render in USD and dates are
+locale-independent for every viewer.
 
 ## What judges can exercise
 
