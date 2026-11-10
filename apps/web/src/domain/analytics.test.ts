@@ -27,3 +27,19 @@ test('analytics bridge reconciles to the net change', () => {
     -352_736,
   );
 });
+
+test('each bridge factor adds up from the amounts and fees of its own records', () => {
+  const byId = new Map(buildAnalyticsRecords().map((record) => [record.record_id, record]));
+  for (const period of ['2026-10', '2026-09', '2026-05']) {
+    for (const item of buildAnalyticsBridge(period)) {
+      const sign = (month: string) => (month === period ? 1 : -1);
+      const total = item.record_ids.reduce((sum, id) => {
+        const record = byId.get(id);
+        assert.ok(record, `${id} is in the analytics ledger`);
+        const value = item.id === 'fee_delta' ? record.fees_usd : record.amount_usd;
+        return sum + sign(record.month) * cents(value);
+      }, 0);
+      assert.equal(total, cents(item.value_usd), `${period} ${item.id}`);
+    }
+  }
+});

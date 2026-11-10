@@ -1,207 +1,425 @@
-.studio-page {
+/* Income investigation ----------------------------------------------------------------------- */
+.investigation {
   display: grid;
-  height: 100%;
-  min-height: 760px;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 14px;
+  gap: 16px;
 }
-.studio-page__head {
+.investigation__head {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto auto;
-  align-items: center;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
 }
-.studio-page__head h1 {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
-.studio-page__head p {
-  margin-top: 4px;
+.investigation__eyebrow {
   color: var(--fs-ink-muted);
-  font-size: 13px;
-}
-.studio-page__badges,
-.studio-page__actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.studio-page__proof {
-  display: flex;
-  align-items: center;
-  gap: 26px;
-  min-height: 50px;
-  overflow-x: auto;
-  border: 1px solid rgb(255 255 255 / 90%);
-  border-radius: 18px;
-  background: rgb(255 255 255 / 72%);
-  padding: 0 18px;
-  white-space: nowrap;
-}
-.studio-page__proof span {
-  color: var(--fs-ink-muted);
-  font-size: 12px;
-}
-.studio-page__proof strong {
-  margin-right: 4px;
-  color: var(--fs-ink-strong);
-  font: 750 15px/1 var(--fs-font-display);
-}
-.studio-page__proof .is-negative strong {
-  color: var(--fs-danger);
-}
-.studio-page__proof .is-positive strong {
-  color: var(--fs-success);
-}
-.studio-page__proof p {
-  margin: 0 0 0 auto;
-  color: var(--fs-violet);
   font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.studio-page__host {
-  min-height: 640px;
+.investigation__head h1 {
+  margin-top: 6px;
+  max-width: 820px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+.investigation__head h1 .is-down {
+  color: var(--fs-danger);
+}
+.investigation__head h1 .is-up {
+  color: var(--fs-success);
+}
+.investigation__sub {
+  margin-top: 8px;
+  max-width: 720px;
+  color: var(--fs-ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.investigation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.investigation__actions .fs-button--primary svg {
+  color: #c4b5ff;
+}
+.investigation__canvas {
+  height: 560px;
+  min-width: 0;
+}
+/* A customized report can hold any number of widgets: give it the height of the viewport. */
+.investigation.is-customized .investigation__canvas {
+  height: max(640px, calc(100vh - 230px));
+}
+.investigation.is-editing .investigation__canvas {
+  height: max(660px, calc(100vh - 250px));
   overflow: hidden;
+  background: rgb(255 255 255 / 55%);
   border: 1px solid rgb(255 255 255 / 90%);
   border-radius: var(--fs-radius-lg);
   box-shadow: var(--fs-shadow-card);
 }
+.investigation__note {
+  color: var(--fs-ink-faint);
+  font-size: 11px;
+}
+.investigation__customize {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  border: 1px solid var(--fs-border);
+  border-radius: var(--fs-radius-md);
+  background: rgb(255 255 255 / 70%);
+  padding: 10px 14px;
+  color: var(--fs-ink-muted);
+  font-size: 12.5px;
+}
+.investigation__customize p {
+  flex: 1 1 320px;
+}
+.investigation__customize strong {
+  color: var(--fs-ink-strong);
+}
+.investigation__customize label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--fs-ink-strong);
+  font-weight: 650;
+}
+.investigation__customize input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--fs-brand);
+}
 
-.fs-bridge-widget {
+/* FinSig's explanation (AI, violet) ---------------------------------------------------------- */
+.explanation {
   display: grid;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--fs-violet) 18%, transparent);
+  border-radius: var(--fs-radius-lg);
+  background: var(--fs-gradient-ai);
+  padding: 16px 18px;
+}
+.explanation header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.explanation__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fs-violet);
+  font-size: 12px;
+  font-weight: 800;
+}
+.explanation__close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 70%);
+  color: var(--fs-ink-muted);
+}
+.explanation__loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--fs-ink-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.explanation__claims {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 20px;
+}
+.explanation__claims li::marker {
+  color: var(--fs-violet);
+  font-weight: 800;
+}
+.explanation__claims p {
+  color: var(--fs-ink-strong);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.explanation__evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.explanation__factor,
+.explanation__metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.explanation__factor {
+  border: 1px solid var(--fs-border-strong);
+  background: white;
+  color: var(--fs-ink-strong);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+.explanation__factor:hover {
+  border-color: var(--fs-brand-light);
+}
+.explanation__factor.is-selected {
+  border-color: var(--fs-ink-strong);
+  background: var(--fs-ink-strong);
+  color: white;
+}
+.explanation__factor:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--fs-focus) 30%, transparent);
+  outline-offset: 2px;
+}
+.explanation__metric {
+  background: rgb(255 255 255 / 60%);
+  color: var(--fs-ink-muted);
+}
+.explanation__metric strong {
+  color: var(--fs-ink-strong);
+}
+.explanation__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fs-success);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* Verified bridge widget (inside AG Studio) -------------------------------------------------- */
+.fs-bridge {
+  display: flex;
+  box-sizing: border-box;
   height: 100%;
-  align-content: start;
-  gap: 16px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 14px;
   color: var(--fs-ink);
   font-family: var(--fs-font-body);
 }
-.fs-bridge-widget header,
-.fs-bridge-widget header > div,
-.fs-bridge-widget__range,
-.fs-bridge-widget__factors article > div:first-child,
-.fs-bridge-widget footer {
+.fs-bridge__head {
   display: flex;
-  align-items: center;
-}
-.fs-bridge-widget header {
-  justify-content: space-between;
-  gap: 16px;
-}
-.fs-bridge-widget header > div {
   align-items: flex-start;
-  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
 }
-.fs-bridge-widget header p {
-  margin: 0 0 3px;
+.fs-bridge__head p {
   color: var(--fs-ink-muted);
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.fs-bridge-widget header h3 {
-  margin: 0;
+.fs-bridge__head h3 {
+  margin-top: 4px;
   color: var(--fs-ink-strong);
   font: 750 17px/1.2 var(--fs-font-display);
   letter-spacing: -0.03em;
 }
-.fs-bridge-widget header > strong {
-  font: 750 24px/1 var(--fs-font-display);
-  letter-spacing: -0.05em;
-}
-.fs-bridge-widget__range {
-  gap: 10px;
-}
-.fs-bridge-widget__range span {
-  color: var(--fs-ink-muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-.fs-bridge-widget__range div {
-  position: relative;
-  height: 8px;
-  flex: 1;
-  overflow: hidden;
-  border-radius: 99px;
-  background: var(--fs-surface-sunken);
-}
-.fs-bridge-widget__range i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: inherit;
-  background: var(--fs-gradient-brand);
-}
-.fs-bridge-widget__factors {
-  display: grid;
-  gap: 12px;
-}
-.fs-bridge-widget__factors article {
-  display: grid;
+.fs-bridge__check {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  margin-left: 8px;
+  vertical-align: 1px;
   gap: 5px;
-}
-.fs-bridge-widget__factors article > div:first-child {
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.fs-bridge-widget__factors article strong {
-  font-variant-numeric: tabular-nums;
-}
-.fs-bridge-widget .is-negative {
-  color: var(--fs-danger);
-}
-.fs-bridge-widget .is-positive {
-  color: var(--fs-success);
-}
-.fs-bridge-widget__bar {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: var(--fs-surface-sunken);
-}
-.fs-bridge-widget__bar i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: currentColor;
-}
-.fs-bridge-widget__factors small {
-  color: var(--fs-ink-muted);
-  font-size: 10px;
-}
-.fs-bridge-widget footer {
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: auto;
-}
-.fs-bridge-widget footer span {
   border-radius: 999px;
   background: var(--fs-success-soft);
   color: var(--fs-success);
   padding: 5px 9px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 750;
+}
+.fs-bridge__rows {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fs-bridge__row {
+  display: grid;
+  width: 100%;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  padding: 6px 10px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.fs-bridge__row.is-factor {
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease;
+}
+.fs-bridge__row.is-factor:hover {
+  background: var(--fs-surface-tint);
+}
+.fs-bridge__row.is-factor:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--fs-focus) 30%, transparent);
+  outline-offset: 1px;
+}
+.fs-bridge__row.is-selected {
+  border-color: color-mix(in srgb, var(--fs-brand) 35%, transparent);
+  background: var(--fs-brand-soft);
+}
+.fs-bridge__row.is-dimmed {
+  opacity: 0.55;
+}
+.fs-bridge__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.fs-bridge__line strong {
+  color: var(--fs-ink-strong);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fs-bridge__row.is-down .fs-bridge__line strong {
+  color: var(--fs-danger);
+}
+.fs-bridge__row.is-up .fs-bridge__line strong {
+  color: var(--fs-success);
+}
+.fs-bridge__row.is-total .fs-bridge__line {
+  color: var(--fs-ink-muted);
+  font-size: 12px;
+}
+.fs-bridge__track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--fs-surface-sunken);
+}
+.fs-bridge__track i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 99px;
+}
+.fs-bridge__track .is-base {
+  background: color-mix(in srgb, var(--fs-brand) 32%, var(--fs-surface-sunken));
+}
+.fs-bridge__track .is-current {
+  background: var(--fs-gradient-brand);
+}
+.fs-bridge__track .is-down {
+  background: var(--fs-danger);
+}
+.fs-bridge__track .is-up {
+  background: var(--fs-success);
+}
+.fs-bridge__line small {
+  margin-left: 8px;
+  color: var(--fs-ink-faint);
+  font-size: 11px;
+  font-weight: 650;
+}
+.fs-bridge__foot {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  border-top: 1px solid var(--fs-border);
+  padding-top: 10px;
+}
+.fs-bridge__foot div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--fs-ink-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+.fs-bridge__foot div strong {
+  font: 800 22px/1 var(--fs-font-display);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.fs-bridge__foot .is-down {
+  color: var(--fs-danger);
+}
+.fs-bridge__foot .is-up {
+  color: var(--fs-success);
+}
+.fs-bridge__foot p {
+  color: var(--fs-ink-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.fs-bridge__foot p button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--fs-brand);
+  font: inherit;
+  font-weight: 750;
+}
+/* Built-in widget titles get the same inset as the bridge; Studio has no theme param for it. */
+.investigation__canvas .ag-studio-layout-widget-header:not(.ag-studio-layout-widget-header-hidden) {
+  padding: 16px 16px 12px;
 }
 .fs-studio-source-link {
   color: var(--fs-brand);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 750;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-@media (max-width: 1100px) {
-  .studio-page__head {
-    grid-template-columns: 1fr auto;
+
+@media (max-width: 1060px) {
+  .investigation__head {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
-  .studio-page__badges {
-    display: none;
+  .investigation__actions {
+    justify-content: flex-start;
+  }
+  .investigation__canvas {
+    height: 1140px;
   }
 }
-@media (max-width: 700px) {
-  .studio-page__head {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .investigation__head h1 {
+    font-size: 24px;
   }
-  .studio-page__proof p {
-    display: none;
+  .investigation__actions .fs-button {
+    flex: 1 1 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fs-bridge__row.is-factor,
+  .explanation__factor {
+    transition: none;
   }
 }

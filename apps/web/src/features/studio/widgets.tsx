@@ -18,7 +18,7 @@ export const finSigWidgets = createWidgets<FinSigStudioRegistry>({
   additionalTypes: [
     {
       id: 'finsig-net-change-bridge',
-      label: 'FinSig net change bridge',
+      label: 'Verified net income bridge',
       comp: NetChangeBridgeWidget,
       dataMapping: {},
       defaultSize: { height: 340, width: 600 },
@@ -27,11 +27,11 @@ export const finSigWidgets = createWidgets<FinSigStudioRegistry>({
       ai: {
         label: 'Verified net change bridge',
         description:
-          'A FinSig-specific reconciliation widget that explains the exact change in net income with source-linked factors.',
+          'The centre of the income investigation: a waterfall from last month to this month with one row per verified factor. Selecting a factor narrows the evidence ledger to its PayPal records.',
         usage:
-          'Use when the reader asks why income changed. It is deterministic and should not be replaced with an unverified narrative.',
+          'Keep it in every investigation of why income changed. It is deterministic and must not be replaced with an unverified narrative or a chart of model-written numbers.',
         configuration:
-          'The widget reads the server-verified bridge from application context. No model-generated amount is accepted.',
+          'The widget reads the code-calculated bridge from application context. It takes no data mapping, and no model-generated amount is accepted.',
       },
     },
   ],

@@ -1,89 +1,94 @@
-import type { AgReportState } from 'ag-studio';
+import type { AgReportState, AgResponsiveLayoutBreakpoint } from 'ag-studio';
 import type { FinSigStudioRegistry } from './types';
 
+/**
+ * The income investigation as an AG Studio report: the verified bridge beside an evidence ledger.
+ * Which records the ledger shows comes from the page's drill-through filter, not from this state,
+ * so the saved report stays the same for every month.
+ */
 export const finSigInitialReport: AgReportState<FinSigStudioRegistry> = {
-  selectedPageId: 'income-studio',
+  selectedPageId: 'income-investigation',
+  // Customize analysis opens on the agent; the other panels start as rails beside it.
+  panels: {
+    ai: { width: 340 },
+    edit: { collapsed: true },
+    data: { collapsed: true },
+    filters: { collapsed: true },
+  },
   pages: [
     {
-      id: 'income-studio',
+      id: 'income-investigation',
       layout: {
         type: 'widget',
         columns: 24,
         rowHeight: 18,
-        minWidth: 760,
+        minWidth: 320,
         maxWidth: undefined,
         height: undefined,
-        pagePadding: 16,
-        backgroundColor: '#eef1f8',
-        widgetPadding: 16,
+        pagePadding: 0,
+        backgroundColor: 'transparent',
+        widgetPadding: 8,
         widgetBackgroundColor: '#ffffff',
         widgetBorderEnabled: true,
-        widgetBorderRadius: 20,
-        widgetBorderColor: '#e3e7f3',
+        widgetBorderRadius: 22,
+        widgetBorderColor: '#e6e9f4',
         widgetBorderWidth: 1,
       },
       widgets: {
-        'net-total': {
-          type: 'value',
-          dataMapping: { value: [{ id: 'transactions.net_usd', aggregation: 'sum' }] },
-          format: {
-            title: { enabled: true, text: 'Net income' },
-            subtitle: { enabled: true, text: 'Fictional sample history after PayPal fees' },
-          },
-        },
-        'client-chart': {
-          type: 'column-chart-grouped',
-          dataMapping: {
-            categoryKey: [{ id: 'transactions.client' }],
-            valueKey: [{ id: 'transactions.net_usd', aggregation: 'sum' }],
-          },
-          format: {
-            title: { enabled: true, text: 'Net by client' },
-            subtitle: { enabled: true, text: 'Click a bar to cross-filter the ledger' },
-            triggerCrossFilter: true,
-          },
-        },
         'net-bridge': {
           type: 'finsig-net-change-bridge',
           dataMapping: {},
         },
-        'monthly-trend': {
-          type: 'line-chart',
-          dataMapping: {
-            categoryKey: [{ id: 'transactions.month' }],
-            valueKey: [{ id: 'transactions.net_usd', aggregation: 'sum' }],
-          },
-          format: {
-            title: { enabled: true, text: 'Net income by month' },
-            subtitle: { enabled: true, text: 'Twelve complete months plus November to date' },
-          },
-        },
-        'source-grid': {
+        'evidence-ledger': {
           type: 'grid',
           dataMapping: {
             cols: [
               { id: 'transactions.date' },
               { id: 'transactions.client' },
-              { id: 'transactions.activity' },
-              { id: 'transactions.type' },
-              { id: 'transactions.status' },
-              { id: 'transactions.net_usd' },
+              { id: 'transactions.amount_usd' },
+              { id: 'transactions.fees_usd' },
               { id: 'transactions.source' },
             ],
           },
           format: {
-            title: { enabled: true, text: 'Source ledger' },
-            subtitle: { enabled: true, text: 'Every number remains traceable to a PayPal record' },
+            title: { enabled: true, text: 'Evidence ledger' },
+            subtitle: {
+              enabled: true,
+              text: 'The PayPal records behind the selected factor. Amounts add up to the bridge.',
+            },
+            // A row click must not filter the rest of the report to that one row.
+            triggerCrossFilter: false,
+            // Columns fit their content so all five stay visible on a laptop-width canvas.
+            style: { columnAutoSize: true },
           },
         },
       },
       widgetLayout: {
-        'net-total': { xTrack: 0, yTrack: 0, xSpan: 6, ySpan: 9 },
-        'client-chart': { xTrack: 0, yTrack: 9, xSpan: 6, ySpan: 14 },
-        'net-bridge': { xTrack: 6, yTrack: 0, xSpan: 9, ySpan: 23 },
-        'monthly-trend': { xTrack: 15, yTrack: 0, xSpan: 9, ySpan: 23 },
-        'source-grid': { xTrack: 0, yTrack: 23, xSpan: 24, ySpan: 24 },
+        // Authored stacked, which suits the editor's narrower canvas; wide view mode places the
+        // two side by side (see investigationBreakpoints).
+        'net-bridge': { xTrack: 0, yTrack: 0, xSpan: 24, ySpan: 30 },
+        'evidence-ledger': { xTrack: 0, yTrack: 30, xSpan: 24, ySpan: 24 },
       },
     },
   ],
 };
+
+/**
+ * View mode only (Studio applies breakpoints only there). From 900px of canvas the investigation
+ * puts the bridge beside the evidence it points to. A report someone has customized keeps the
+ * layout they authored.
+ */
+export const investigationBreakpoints: AgResponsiveLayoutBreakpoint[] = [
+  {
+    minWidth: 900,
+    layout: (candidates, { columns }) => {
+      const stacked = candidates.every(({ layout }) => layout.xSpan === columns);
+      if (candidates.length !== 2 || !stacked) return candidates.map(({ layout }) => layout);
+      const bridgeSpan = Math.round((columns * 9) / 24);
+      return [
+        { xTrack: 0, yTrack: 0, xSpan: bridgeSpan, ySpan: 30 },
+        { xTrack: bridgeSpan, yTrack: 0, xSpan: columns - bridgeSpan, ySpan: 30 },
+      ];
+    },
+  },
+];

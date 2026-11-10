@@ -640,16 +640,6 @@ ol {
   min-width: 0;
   padding: 18px 26px 40px 22px;
 }
-.app-shell.is-studio .app-main {
-  display: flex;
-  height: 100vh;
-  flex-direction: column;
-  padding-bottom: 18px;
-}
-.app-shell.is-studio .app-content {
-  flex: 1;
-  min-height: 0;
-}
 .topbar {
   display: flex;
   align-items: center;

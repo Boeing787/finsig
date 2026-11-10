@@ -29,8 +29,10 @@ workspace is a fictional freelancer with twelve months of PayPal-shaped records.
 5. **Transactions.** An AG Grid ledger with filters, search, CSV export and a source drawer for every
    record. The _Live sandbox_ filter shows records read live from the sandbox merchant configured
    for FinSig.
-6. **Studio.** AG Studio report builder on the same ledger: resize, configure and add widgets, or ask
-   the agent to explain the decline. The custom bridge widget only accepts code-verified amounts.
+6. **Income investigation.** _“Why did October net income fall by $3,527.36?”_ answered as a verified
+   bridge (a custom AG Studio widget) beside the PayPal records behind each factor. Select a factor to
+   narrow the evidence, or ask FinSig to investigate. _Customize analysis_ opens the AG Studio editor
+   and its agent on the same investigation.
 7. **Security.** What FinSig can read, what it can never do, and where data lives.
 
 ## PayPal integration

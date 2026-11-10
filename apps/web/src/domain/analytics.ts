@@ -16,6 +16,8 @@ import {
 export type AnalyticsRecord = {
   record_id: string;
   activity: string;
+  /** Counted payment, refund or expense amount before PayPal fees; zero when not counted. */
+  amount_usd: number;
   client: string;
   counterparty: string;
   date: string;
@@ -68,6 +70,7 @@ export function buildAnalyticsRecords(): AnalyticsRecord[] {
       return {
         record_id: record.id,
         activity: activityLabel(record),
+        amount_usd: minorToDollars(grossMinor + refundMinor + expenseMinor),
         client: record.clientId ? clientName(record.clientId) : '—',
         counterparty: record.counterparty,
         date: record.initiatedAt.slice(0, 10),

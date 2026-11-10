@@ -57,7 +57,7 @@ const sections: { label: string; items: NavItem[] }[] = [
     label: 'Intelligence',
     items: [
       { href: '/app/insights', label: 'AI Insights', icon: Sparkles, ai: true },
-      { href: '/app/studio', label: 'Report studio', icon: ChartNoAxesCombined },
+      { href: '/app/studio', label: 'Income investigation', icon: ChartNoAxesCombined },
     ],
   },
   {
@@ -90,11 +90,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function Shell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   const { active, close } = useOverlay();
-  const isStudio = pathname.startsWith('/app/studio');
   return (
-    <div className={`app-shell ${isStudio ? 'is-studio' : ''}`}>
+    <div className="app-shell">
       <Sidebar />
       {active === 'nav' ? <Scrim className="is-nav" onClose={() => close('nav')} /> : null}
       <div className="app-main">
