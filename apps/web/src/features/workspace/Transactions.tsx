@@ -10,7 +10,7 @@ import {
   type RowClickedEvent,
 } from 'ag-grid-community';
 import { Download, RefreshCw, Search, ShieldCheck, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   activityName,
   kindLabels,
@@ -23,6 +23,7 @@ import {
   type WorkspaceRecord,
 } from '../../domain/workspace';
 import { ClientAvatar, eventCodeMeaning, RecordIcon } from './parts';
+import { Scrim, useOverlay } from './overlay';
 import { ReviewQueue } from './ReviewQueue';
 import { useWorkspace, type LiveState } from './WorkspaceProvider';
 
@@ -229,6 +230,24 @@ export function Transactions({
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [query, setQuery] = useState(initialQuery);
   const [selectedId, setSelectedId] = useState<string | null>(initialRecordId);
+  const { active, open, close } = useOverlay();
+  const drawerOpen = selectedId !== null && active === 'record';
+  // A record linked from elsewhere (notification, AI citation, Studio) opens its drawer on arrival.
+  useEffect(() => {
+    if (!initialRecordId) return;
+    const task = window.setTimeout(() => open('record'), 0);
+    return () => window.clearTimeout(task);
+  }, [initialRecordId, open]);
+
+  function openRecord(id: string | null) {
+    setSelectedId(id);
+    if (id) open('record');
+  }
+
+  function closeRecord() {
+    close('record');
+    setSelectedId(null);
+  }
   const allRows = useMemo(() => [...liveRows(live), ...sampleRows(state)], [live, state]);
   const rows = useMemo(() => allRows.filter((row) => matches(row, filter)), [allRows, filter]);
   const selected = allRows.find((row) => row.id === selectedId) ?? null;
@@ -441,7 +460,7 @@ export function Transactions({
             columnDefs={columns}
             quickFilterText={query}
             getRowId={({ data }) => data.id}
-            onRowClicked={(event: RowClickedEvent<Row>) => setSelectedId(event.data?.id ?? null)}
+            onRowClicked={(event: RowClickedEvent<Row>) => openRecord(event.data?.id ?? null)}
             rowClass="tx-row"
             animateRows
             suppressCellFocus
@@ -454,7 +473,12 @@ export function Transactions({
         </div>
       </section>
 
-      {selected ? <RecordDrawer row={selected} onClose={() => setSelectedId(null)} /> : null}
+      {selected && drawerOpen ? (
+        <>
+          <Scrim onClose={closeRecord} />
+          <RecordDrawer row={selected} onClose={closeRecord} />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -533,7 +557,7 @@ function RecordDrawer({ row, onClose }: { row: Row; onClose: () => void }) {
   ];
   if (reference) fields.push(['References', `${reference.id} · ${reference.subject}`]);
   return (
-    <div className="drawer" role="dialog" aria-modal="false" aria-label={`Record ${row.id}`}>
+    <div className="drawer" role="dialog" aria-modal="true" aria-label={`Record ${row.id}`}>
       <div className="drawer__head">
         <div>
           <p className="muted-label">{row.type}</p>
@@ -544,7 +568,7 @@ function RecordDrawer({ row, onClose }: { row: Row; onClose: () => void }) {
           <X size={16} />
         </button>
       </div>
-      <strong className={`drawer__amount ${row.net >= 0 ? 'is-in' : ''}`}>
+      <strong className={`drawer__amount ${row.kind !== 'review' && row.net >= 0 ? 'is-in' : ''}`}>
         {usd(row.amount, true)}
       </strong>
       <p className="callout">

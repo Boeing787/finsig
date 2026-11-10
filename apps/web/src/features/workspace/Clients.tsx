@@ -3,6 +3,7 @@
 import { Sparkline } from '@finsig/ui';
 import { ArrowRight, Repeat, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
 import {
   clientSummaries,
   incomeHealth,
@@ -15,7 +16,7 @@ import {
 import { ClientAvatar } from './parts';
 import { useWorkspace } from './WorkspaceProvider';
 
-export function Clients() {
+export function Clients({ focusClientId = null }: { focusClientId?: string | null }) {
   const { period } = useWorkspace();
   const clients = clientSummaries(period);
   const invoices = invoiceViews();
@@ -26,6 +27,14 @@ export function Clients() {
   const recurring = health.components.find((component) => component.id === 'recurring')!;
   const top = clients[0]!;
   const topMonthly = money(top.netMinor / 12n, { cents: false });
+  const focused = clients.find((client) => client.id === focusClientId) ?? null;
+
+  useEffect(() => {
+    if (!focused) return;
+    document
+      .getElementById(`client-${focused.id}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focused]);
   return (
     <div className="page clients-page">
       <section className="page-intro">
@@ -37,6 +46,30 @@ export function Clients() {
           </p>
         </div>
       </section>
+
+      {focused
+        ? (() => {
+            const overdue = invoices.find(
+              (invoice) => invoice.clientId === focused.id && invoice.status === 'overdue',
+            );
+            return (
+              <div className={`focus-banner ${overdue ? 'is-danger' : ''}`} role="status">
+                <ClientAvatar clientId={focused.id} size={34} />
+                <div>
+                  <strong>{focused.name}</strong>
+                  <span>
+                    {overdue
+                      ? `Invoice ${overdue.id} for ${money(overdue.amountMinor)} is ${Math.abs(overdue.daysUntilDue)} days overdue — due ${longDate(`${overdue.dueOn}T00:00:00Z`)}.`
+                      : 'Highlighted below.'}
+                  </span>
+                </div>
+                <Link className="fs-button fs-button--quiet fs-button--sm" href="/app/clients">
+                  Show all clients
+                </Link>
+              </div>
+            );
+          })()
+        : null}
 
       <div className="insight-strip">
         <div className="card insight-tile is-warning">
@@ -73,7 +106,12 @@ export function Clients() {
           const open = invoices.filter((invoice) => invoice.clientId === client.id);
           const average = client.payments ? client.grossMinor / BigInt(client.payments) : 0n;
           return (
-            <article key={client.id} className="card client-card">
+            <article
+              key={client.id}
+              id={`client-${client.id}`}
+              className={`card client-card ${client.id === focused?.id ? 'is-focused' : ''}`}
+              aria-current={client.id === focused?.id ? 'true' : undefined}
+            >
               <header>
                 <ClientAvatar clientId={client.id} size={44} />
                 <div>

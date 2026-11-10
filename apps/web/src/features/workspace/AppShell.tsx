@@ -2,20 +2,27 @@
 
 import {
   ArrowLeftRight,
+  ArrowRight,
   Bell,
+  Bot,
+  CalendarClock,
   ChartNoAxesCombined,
   ChevronDown,
   LayoutDashboard,
   LogOut,
+  Menu,
   RefreshCw,
   Search,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Users,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   balanceSummary,
   invoiceViews,
@@ -26,16 +33,40 @@ import {
   type Period,
 } from '../../domain/workspace';
 import { BrandMark } from '../auth/Logo';
+import { OverlayProvider, Scrim, useOverlay } from './overlay';
 import { useWorkspace } from './WorkspaceProvider';
 
-const navigation = [
-  { href: '/app', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/app/transactions', label: 'Transactions', icon: ArrowLeftRight },
-  { href: '/app/clients', label: 'Clients', icon: Users },
-  { href: '/app/insights', label: 'AI Insights', icon: Sparkles },
-  { href: '/app/studio', label: 'Studio', icon: ChartNoAxesCombined },
-  { href: '/app/settings', label: 'Security', icon: ShieldCheck },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  badge?: 'review' | 'overdue';
+  ai?: boolean;
+}
+
+const sections: { label: string; items: NavItem[] }[] = [
+  {
+    label: 'Overview',
+    items: [
+      { href: '/app', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/app/transactions', label: 'Transactions', icon: ArrowLeftRight, badge: 'review' },
+      { href: '/app/clients', label: 'Clients', icon: Users, badge: 'overdue' },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { href: '/app/insights', label: 'AI Insights', icon: Sparkles, ai: true },
+      { href: '/app/studio', label: 'Report studio', icon: ChartNoAxesCombined },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [{ href: '/app/settings', label: 'Security', icon: ShieldCheck }],
+  },
 ];
+
+const allItems = sections.flatMap((section) => section.items);
 
 function initials(name: string) {
   return name
@@ -46,44 +77,26 @@ function initials(name: string) {
     .join('');
 }
 
+function isActive(pathname: string, href: string) {
+  return href === '/app' ? pathname === '/app' : pathname.startsWith(href);
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <OverlayProvider>
+      <Shell>{children}</Shell>
+    </OverlayProvider>
+  );
+}
+
+function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user } = useWorkspace();
+  const { active, close } = useOverlay();
   const isStudio = pathname.startsWith('/app/studio');
   return (
     <div className={`app-shell ${isStudio ? 'is-studio' : ''}`}>
-      <aside className="app-rail" aria-label="Primary">
-        <Link href="/app" className="app-rail__brand" aria-label="FinSig dashboard">
-          <BrandMark size={40} />
-        </Link>
-        <nav className="app-rail__nav">
-          {navigation.map((item) => {
-            const active =
-              item.href === '/app' ? pathname === '/app' : pathname.startsWith(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`app-rail__link ${active ? 'is-active' : ''}`}
-                aria-current={active ? 'page' : undefined}
-              >
-                <Icon size={19} strokeWidth={2} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        <form action="/api/auth/logout" method="post" className="app-rail__footer">
-          <button type="submit" className="app-rail__link" aria-label="Sign out">
-            <LogOut size={18} />
-            <span>Sign out</span>
-          </button>
-          <span className="app-rail__avatar" title={user.name}>
-            {initials(user.name)}
-          </span>
-        </form>
-      </aside>
+      <Sidebar />
+      {active === 'nav' ? <Scrim className="is-nav" onClose={() => close('nav')} /> : null}
       <div className="app-main">
         <Topbar />
         <main className="app-content">{children}</main>
@@ -92,10 +105,122 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
+function Sidebar() {
+  const pathname = usePathname();
+  const { user, state, live, syncNow } = useWorkspace();
+  const { active, close } = useOverlay();
+  const counts = {
+    review: unassignedSales(state).length,
+    overdue: invoiceViews().filter((invoice) => invoice.status === 'overdue').length,
+  };
+  const syncLabel =
+    live.status === 'ready'
+      ? `Synced ${new Date(live.result.fetchedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+      : live.status === 'unconfigured'
+        ? 'Live sync off · sample data'
+        : live.status === 'error'
+          ? 'Sync paused'
+          : 'Syncing…';
+  return (
+    <aside className={`sidebar ${active === 'nav' ? 'is-open' : ''}`} aria-label="Primary">
+      <div className="sidebar__panel">
+        <div className="sidebar__brand">
+          <Link href="/app" aria-label="FinSig dashboard" className="sidebar__logo">
+            <BrandMark size={38} />
+            <span>
+              <strong>FinSig</strong>
+              <small>Freelance finance</small>
+            </span>
+          </Link>
+          <button
+            type="button"
+            className="sidebar__close"
+            onClick={() => close('nav')}
+            aria-label="Close menu"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <nav className="sidebar__nav">
+          {sections.map((section) => (
+            <div key={section.label} className="sidebar__section">
+              <p className="sidebar__label">{section.label}</p>
+              {section.items.map((item) => {
+                const current = isActive(pathname, item.href);
+                const Icon = item.icon;
+                const badge = item.badge ? counts[item.badge] : 0;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={item.label}
+                    className={`sidebar__link ${current ? 'is-active' : ''} ${item.ai ? 'is-ai' : ''}`}
+                    aria-current={current ? 'page' : undefined}
+                  >
+                    <span className="sidebar__icon">
+                      <Icon size={18} strokeWidth={2} />
+                    </span>
+                    <span className="sidebar__text">{item.label}</span>
+                    {badge ? (
+                      <span
+                        className={`sidebar__badge ${item.badge === 'overdue' ? 'is-danger' : 'is-ai'}`}
+                        aria-label={`${badge} ${item.badge === 'overdue' ? 'overdue' : 'to review'}`}
+                      >
+                        {badge}
+                      </span>
+                    ) : item.ai ? (
+                      <span className="sidebar__badge is-tag">AI</span>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <button
+          type="button"
+          className={`sidebar__sync is-${live.status}`}
+          onClick={() => void syncNow()}
+          title="Read the sandbox merchant through PayPal Transaction Search"
+        >
+          <span className="sidebar__sync-mark">P</span>
+          <span className="sidebar__text">
+            <strong>PayPal sandbox</strong>
+            <small>
+              <i className="sidebar__dot" /> {syncLabel}
+            </small>
+          </span>
+          <RefreshCw size={14} className={live.status === 'loading' ? 'is-spinning' : undefined} />
+        </button>
+
+        <div className="sidebar__user">
+          <span className="avatar" aria-hidden="true">
+            {initials(user.name)}
+          </span>
+          <span className="sidebar__text">
+            <strong>{user.name}</strong>
+            <small>{user.mode === 'paypal' ? 'Signed in with PayPal' : 'Demo workspace'}</small>
+          </span>
+          <form action="/api/auth/logout" method="post">
+            <button type="submit" className="icon-button" aria-label="Sign out" title="Sign out">
+              <LogOut size={16} />
+            </button>
+          </form>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 function Topbar() {
   const router = useRouter();
-  const { user, period, setPeriod, live, syncNow, state } = useWorkspace();
+  const pathname = usePathname();
+  const { period, setPeriod, live, syncNow } = useWorkspace();
+  const { toggle } = useOverlay();
   const [query, setQuery] = useState('');
+  const page = allItems.find((item) => isActive(pathname, item.href));
 
   function onSearch(event: FormEvent) {
     event.preventDefault();
@@ -107,6 +232,18 @@ function Topbar() {
 
   return (
     <header className="topbar">
+      <div className="topbar__mobile">
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => toggle('nav')}
+          aria-label="Open menu"
+        >
+          <Menu size={18} />
+        </button>
+        <BrandMark size={32} />
+        <strong>{page?.label ?? 'FinSig'}</strong>
+      </div>
       <form className="topbar__search" role="search" onSubmit={onSearch}>
         <Search size={16} />
         <input
@@ -130,16 +267,7 @@ function Topbar() {
           <ChevronDown size={14} />
         </label>
         <SyncPill live={live} onSync={() => void syncNow()} />
-        <Notifications unassigned={unassignedSales(state).length} />
-        <div className="topbar__user">
-          <span className="topbar__avatar">{initials(user.name)}</span>
-          <div>
-            <strong>{user.name}</strong>
-            <small>
-              {user.mode === 'paypal' ? 'PayPal identity · sample analytics' : 'Demo workspace'}
-            </small>
-          </div>
-        </div>
+        <Notifications />
       </div>
     </header>
   );
@@ -182,52 +310,155 @@ export function SyncPill({
   );
 }
 
-function Notifications({ unassigned }: { unassigned: number }) {
-  const overdue = invoiceViews().filter((invoice) => invoice.status === 'overdue');
+interface Notice {
+  id: string;
+  icon: LucideIcon;
+  tone: 'danger' | 'ai' | 'warning';
+  title: string;
+  detail: string;
+  destination: string;
+  href: string;
+}
+
+const seenKey = 'finsig-seen-notices-v1';
+
+function Notifications() {
+  const router = useRouter();
+  const { state } = useWorkspace();
+  const { active, toggle, close } = useOverlay();
+  const open = active === 'notifications';
+  const root = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState<string[]>([]);
+  const unassigned = unassignedSales(state).length;
   const held = balanceSummary().heldForReviewMinor;
-  const items = [
-    ...overdue.map((invoice) => ({
-      href: '/app/clients',
-      title: `${invoice.client.name} invoice is ${Math.abs(invoice.daysUntilDue)} days overdue`,
-      detail: `${invoice.id} · ${money(invoice.amountMinor)}`,
-      tone: 'danger',
-    })),
+
+  const notices: Notice[] = [
+    ...invoiceViews()
+      .filter((invoice) => invoice.status === 'overdue')
+      .map((invoice): Notice => ({
+        id: `overdue:${invoice.id}`,
+        icon: CalendarClock,
+        tone: 'danger',
+        title: `${invoice.client.name} invoice is ${Math.abs(invoice.daysUntilDue)} days overdue`,
+        detail: `${invoice.id} · ${money(invoice.amountMinor)}`,
+        destination: `Clients → ${invoice.client.name}`,
+        href: `/app/clients?focus=${invoice.clientId}`,
+      })),
     ...(unassigned
       ? [
           {
+            id: `review:${unassigned}`,
+            icon: Bot,
+            tone: 'ai' as const,
+            title: `${unassigned} payment${unassigned > 1 ? 's need' : ' needs'} a category`,
+            detail: 'AI suggests one from the PayPal fields — you confirm',
+            destination: 'Transactions → Needs review',
             href: '/app/transactions?filter=review',
-            title: `${unassigned} payment${unassigned > 1 ? 's' : ''} need a category`,
-            detail: 'AI can suggest one — you confirm',
-            tone: 'ai',
           },
         ]
       : []),
     ...(held
       ? [
           {
-            href: '/app/transactions?record=pp-2026-10-correction',
+            id: 'held:pp-2026-10-correction',
+            icon: ShieldAlert,
+            tone: 'warning' as const,
             title: 'Account correction held for review',
             detail: `${money(held)} excluded from income`,
-            tone: 'warning',
+            destination: 'Transactions → open the record',
+            href: '/app/transactions?record=pp-2026-10-correction',
           },
         ]
       : []),
   ];
+  const unseen = notices.filter((notice) => !seen.includes(notice.id)).length;
+
+  useEffect(() => {
+    const task = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(seenKey);
+        if (raw) setSeen(JSON.parse(raw) as string[]);
+      } catch {
+        // Storage unavailable: every notice simply stays unread.
+      }
+    }, 0);
+    return () => window.clearTimeout(task);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (root.current && !root.current.contains(event.target as Node)) close('notifications');
+    };
+    document.addEventListener('pointerdown', onPointer);
+    return () => document.removeEventListener('pointerdown', onPointer);
+  }, [open, close]);
+
+  function onToggle() {
+    if (!open) {
+      const ids = notices.map((notice) => notice.id);
+      setSeen(ids);
+      try {
+        window.localStorage.setItem(seenKey, JSON.stringify(ids));
+      } catch {
+        // ignore
+      }
+    }
+    toggle('notifications');
+  }
+
+  function go(href: string) {
+    close('notifications');
+    router.push(href);
+  }
+
   return (
-    <details className="notifications">
-      <summary aria-label={`${items.length} notifications`}>
+    <div className="notifications" ref={root}>
+      <button
+        type="button"
+        className={`notifications__trigger ${open ? 'is-open' : ''}`}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label={`Notifications: ${notices.length}, ${unseen} unread`}
+        onClick={onToggle}
+      >
         <Bell size={18} />
-        {items.length ? <span className="notifications__badge">{items.length}</span> : null}
-      </summary>
-      <div className="notifications__panel">
-        <strong>Needs your attention</strong>
-        {items.map((item) => (
-          <Link key={item.title} href={item.href} className={`notifications__item is-${item.tone}`}>
-            <span>{item.title}</span>
-            <small>{item.detail}</small>
-          </Link>
-        ))}
-      </div>
-    </details>
+        {unseen ? <span className="notifications__badge">{unseen}</span> : null}
+      </button>
+      {open ? (
+        <div className="notifications__panel" role="dialog" aria-label="Needs your attention">
+          <header>
+            <strong>Needs your attention</strong>
+            <span>{notices.length} open</span>
+          </header>
+          {notices.length ? (
+            notices.map((notice) => {
+              const Icon = notice.icon;
+              return (
+                <button
+                  key={notice.id}
+                  type="button"
+                  className={`notice is-${notice.tone}`}
+                  onClick={() => go(notice.href)}
+                >
+                  <span className="notice__icon">
+                    <Icon size={16} />
+                  </span>
+                  <span className="notice__body">
+                    <strong>{notice.title}</strong>
+                    <small>{notice.detail}</small>
+                    <em>
+                      {notice.destination} <ArrowRight size={12} />
+                    </em>
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <p className="notifications__empty">Nothing needs you right now.</p>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
-import { ArrowRight, Eye, KeyRound, Lock, Sparkles, Wallet } from 'lucide-react';
+import { ArrowRight, Eye, KeyRound, Lock, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from './Logo';
+import { PayPalSignIn } from './PayPalSignIn';
 
 export function LoginScreen({
   error,
@@ -80,15 +81,13 @@ export function LoginScreen({
             <p className="callout is-success">You are signed out. Your session was cleared.</p>
           ) : null}
 
-          <a className="paypal-button" href="/api/auth/paypal/start">
-            <Wallet size={18} />
-            <span>Continue with PayPal</span>
-          </a>
-          <p className="login__hint">
-            {paypalLogin
-              ? 'Sandbox sign-in verifies your identity only; it does not connect that account’s transaction history.'
-              : 'PayPal sandbox sign-in is not enabled on this deployment yet.'}
-          </p>
+          <PayPalSignIn enabled={paypalLogin} />
+          {paypalLogin ? (
+            <p className="login__hint">
+              Sandbox sign-in verifies your identity only; it does not connect that account’s
+              transaction history.
+            </p>
+          ) : null}
           <p className="login__hint">
             Live Transaction Search, when configured, reads FinSig’s sandbox merchant account and
             stays separate from the sample analytics below.
