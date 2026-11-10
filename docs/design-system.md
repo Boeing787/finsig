@@ -22,7 +22,7 @@ glass cards and dense, chart-led widgets.
 `BarChart` (selectable months with a floating value pill), `AreaChart` (monotone cubic line with
 gradient fill and hover readout), `Gauge`, `Donut`, `Sparkline` and a horizontal `Waterfall` that
 floats each step from the running total so the bridge reconciles visually. The transactions ledger
-uses AG Grid Community with the same tokens; the report builder uses AG Studio.
+uses AG Grid Community on the same tokens (see below); the report builder uses AG Studio.
 
 ## Package boundary
 
@@ -35,6 +35,33 @@ substitute for AG Studio; AG Studio owns the interactive report-building surface
 
 All exported components use `fs-` prefixed classes. `styles.css` defines the public token contract;
 applications import it once through `@finsig/ui/styles.css`.
+
+## AG Grid ledger
+
+AG Grid has one job: the transactions ledger (`src/features/workspace/Transactions.tsx`). The
+dashboard stays card- and chart-led, and AG Studio stays the separate report builder, so neither
+grows a second table.
+
+- **Theme.** `gridTheme` passes the `--fs-*` CSS variables straight into `themeQuartz.withParams`,
+  so the grid has no palette of its own. The data area is transparent over the frosted card,
+  headers sit on `--fs-surface-tint`, and hover, selection, focus and the sort icon use
+  `--fs-brand`. Popups keep `--fs-surface-raised`.
+- **Density.** 56px rows with two-line cells, 40px uppercase headers and 20 rows per page. The
+  grid uses auto height, so the page scrolls rather than the grid. Narrow grids drop columns in a
+  fixed order (fee, gross, source, activity, then date and status) instead of scrolling sideways.
+  At phone width the date moves under the counterparty.
+- **Cells.**
+  - Status is a dot and a label: green for completed, indigo for pending, amber for in review.
+    Money direction lives only in the amounts.
+  - Net is the bold display figure: green for income, red for refunds, ink for costs and
+    transfers. Pending and held amounts are faint, because FinSig does not count them.
+  - Source shows the record type, the PayPal event code, and whether the record is sample or
+    live sandbox data.
+- **Row to evidence.** A row, or its labelled chevron button, opens the record drawer. The row
+  stays selected and on screen, including for deep links from notifications, AI citations or
+  Studio. The drawer reconciles gross, fee and net, names the PayPal source, links a refund to
+  its original payment, and lists the FinSig totals that count the record. Previous/Next (or ↑/↓,
+  j/k) step through the current filtered and sorted view. CSV export writes exactly that view.
 
 ## AG Studio mapping
 
