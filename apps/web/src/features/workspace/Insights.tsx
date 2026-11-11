@@ -22,6 +22,7 @@ import {
   type ActivityId,
 } from '../../domain/workspace';
 import { askFinSig, suggestedQuestions, type Answer } from './ai';
+import { CashPlanCard } from './CashPlan';
 import { CardHeader } from './parts';
 import { useWorkspace } from './WorkspaceProvider';
 
@@ -51,6 +52,7 @@ export function Insights({ initialQuestion }: { initialQuestion: string | null }
         <BridgeCard />
         <HealthCard />
       </div>
+      <CashPlanCard />
       <div className="insights-grid is-reverse">
         <ProfitabilityCard />
         <ForecastCard />
@@ -60,7 +62,7 @@ export function Insights({ initialQuestion }: { initialQuestion: string | null }
 }
 
 function AskPanel({ initialQuestion }: { initialQuestion: string | null }) {
-  const { period, state } = useWorkspace();
+  const { period, state, ready } = useWorkspace();
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
   const counter = useRef(0);
@@ -93,15 +95,17 @@ function AskPanel({ initialQuestion }: { initialQuestion: string | null }) {
     }
   }
 
+  // Wait for the saved workspace (hours, confirmations, plan entries) before asking, so a linked
+  // question is answered from the person's own inputs rather than the defaults.
   useEffect(() => {
-    if (!initialQuestion || asked.current) return;
+    if (!initialQuestion || !ready || asked.current) return;
     const task = window.setTimeout(() => {
       asked.current = true;
       void ask(initialQuestion);
     }, 0);
     return () => window.clearTimeout(task);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialQuestion]);
+  }, [initialQuestion, ready]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -389,17 +393,10 @@ function ForecastCard() {
   const { period, state } = useWorkspace();
   const forecast = forecast30Days(period);
   const tax = taxSetAside(period, state);
-  const hasOverdue = forecast.overdueMinor > 0n;
-  const max =
-    Number(
-      forecast.invoicedMinor > forecast.runRateMinor
-        ? forecast.invoicedMinor
-        : forecast.runRateMinor,
-    ) || 1;
   return (
     <section className="card forecast-card">
       <CardHeader
-        title="Next 30 days"
+        title="Monthly baseline"
         eyebrow="Plan from verified cash"
         icon={<CalendarClock size={16} />}
       />
@@ -407,26 +404,12 @@ function ForecastCard() {
         <div>
           <span>3-month run rate</span>
           <div className="meter is-large">
-            <i style={{ width: `${(Number(forecast.runRateMinor) / max) * 100}%` }} />
+            <i style={{ width: '100%' }} />
           </div>
           <strong>{money(forecast.runRateMinor)}</strong>
           <small>Average net of {forecast.basisMonths.map(monthName).join(', ')}</small>
         </div>
-        <div>
-          <span>Open invoices due</span>
-          <div className="meter is-large is-alt">
-            <i style={{ width: `${(Number(forecast.invoicedMinor) / max) * 100}%` }} />
-          </div>
-          <strong>{money(forecast.invoicedMinor)}</strong>
-          <small>{money(forecast.invoicedNetMinor)} after standard PayPal fees</small>
-        </div>
       </div>
-      {hasOverdue ? (
-        <p className="callout is-warning">
-          {money(forecast.overdueMinor)} is already overdue. Chasing it first protects next month’s
-          cash.
-        </p>
-      ) : null}
       <div className="forecast-card__tax">
         <div>
           <span>Set aside for taxes ({monthName(period)})</span>
@@ -437,7 +420,7 @@ function ForecastCard() {
         </Link>
       </div>
       <p className="card-footnote">
-        A planning baseline, not a promise. AI can explain it; it cannot change it.
+        Invoices, pending payments and expenses for the coming month are in the cash plan above.
       </p>
     </section>
   );

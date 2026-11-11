@@ -37,6 +37,28 @@ const requestSchema = z.discriminatedUnion('task', [
         ),
         taxRatePercent: z.number().int().min(0).max(60),
         monthlyGoalUsd: z.number().int().min(100).max(1_000_000),
+        /** Plan confirmations and entries; labels are untrusted data for the model. */
+        expectations: z
+          .object({
+            confirmed: z.array(z.string().regex(/^[A-Za-z0-9:. _-]{1,80}$/u)).max(50),
+            dismissed: z.array(z.string().regex(/^[A-Za-z0-9:. _-]{1,80}$/u)).max(50),
+            added: z
+              .array(
+                z.object({
+                  id: z.string().regex(/^user-[a-z0-9-]{1,48}$/u),
+                  direction: z.enum(['in', 'out']),
+                  label: z
+                    .string()
+                    .min(2)
+                    .max(60)
+                    .regex(/^[^\u0000-\u001f\u007f]+$/u),
+                  amountMinor: z.string().regex(/^\d{1,10}$/u),
+                  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
+                }),
+              )
+              .max(20),
+          })
+          .optional(),
       })
       .optional(),
   }),
@@ -49,6 +71,15 @@ function toState(input: z.infer<typeof requestSchema> & { task: 'ask' }): Worksp
     hours: input.workspace.hours,
     taxRatePercent: input.workspace.taxRatePercent,
     monthlyGoalMinor: BigInt(input.workspace.monthlyGoalUsd) * 100n,
+    expectations: input.workspace.expectations
+      ? {
+          ...input.workspace.expectations,
+          added: input.workspace.expectations.added.map((entry) => ({
+            ...entry,
+            amountMinor: BigInt(entry.amountMinor),
+          })),
+        }
+      : initialWorkspaceState.expectations,
   };
 }
 

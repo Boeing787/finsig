@@ -53,6 +53,13 @@ export async function askFinSig(
     hours: state.hours,
     taxRatePercent: state.taxRatePercent,
     monthlyGoalUsd: Number(state.monthlyGoalMinor / 100n),
+    expectations: {
+      ...state.expectations,
+      added: state.expectations.added.map((entry) => ({
+        ...entry,
+        amountMinor: entry.amountMinor.toString(),
+      })),
+    },
   };
   return answerResponse.parse(await callAI({ task: 'ask', question, period, workspace }));
 }
@@ -62,4 +69,5 @@ export const suggestedQuestions = [
   'Which kind of work pays me best per hour?',
   'Am I too dependent on one client?',
   'How much should I set aside for taxes?',
+  'What should I expect over the next 30 days?',
 ];

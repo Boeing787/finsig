@@ -10,11 +10,14 @@ import {
   type ReactNode,
 } from 'react';
 import { z } from 'zod';
+import { PLAN_HORIZON_DAYS } from '../../domain/cashplan';
 import {
+  AS_OF,
   DEFAULT_PERIOD,
   initialWorkspaceState,
   PERIODS,
   type ActivityId,
+  type ExpectationInput,
   type Period,
   type WorkspaceState,
 } from '../../domain/workspace';
@@ -44,6 +47,16 @@ interface WorkspaceContextValue {
   setHours: (month: string, activityId: ActivityId, value: string) => string | null;
   setTaxRate: (value: string) => string | null;
   setGoal: (value: string) => string | null;
+  /** Count a detected candidate or overdue invoice in the 30-day plan. */
+  confirmExpectation: (id: string) => void;
+  /** Remove an event from the plan: an entry you added, or a detected one that stopped. */
+  removeExpectation: (id: string) => void;
+  addExpectation: (input: {
+    direction: 'in' | 'out';
+    label: string;
+    amount: string;
+    date: string;
+  }) => string | null;
   reset: () => void;
   live: LiveState;
   syncNow: () => Promise<void>;
@@ -58,7 +71,30 @@ const storedSchema = z.object({
   taxRatePercent: z.number().min(0).max(60),
   monthlyGoalMinor: z.string().regex(/^\d{1,9}$/u),
   period: z.enum(PERIODS).optional(),
+  expectations: z
+    .object({
+      confirmed: z.array(z.string().max(80)).max(50),
+      dismissed: z.array(z.string().max(80)).max(50),
+      added: z
+        .array(
+          z.object({
+            id: z.string().regex(/^user-[a-z0-9-]{1,48}$/u),
+            direction: z.enum(['in', 'out']),
+            label: z.string().min(1).max(60),
+            amountMinor: z.string().regex(/^\d{1,10}$/u),
+            date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
+          }),
+        )
+        .max(20),
+    })
+    .optional(),
 });
+
+const DAY = 86_400_000;
+const planWindow = () => {
+  const start = Date.parse(AS_OF.slice(0, 10));
+  return { start, end: start + PLAN_HORIZON_DAYS * DAY };
+};
 
 function restore(): { state: WorkspaceState; period: Period } {
   try {
@@ -71,6 +107,16 @@ function restore(): { state: WorkspaceState; period: Period } {
         hours: saved.hours as WorkspaceState['hours'],
         taxRatePercent: saved.taxRatePercent,
         monthlyGoalMinor: BigInt(saved.monthlyGoalMinor),
+        expectations: saved.expectations
+          ? {
+              confirmed: saved.expectations.confirmed,
+              dismissed: saved.expectations.dismissed,
+              added: saved.expectations.added.map((entry): ExpectationInput => ({
+                ...entry,
+                amountMinor: BigInt(entry.amountMinor),
+              })),
+            }
+          : initialWorkspaceState.expectations,
       },
       period: saved.period ?? DEFAULT_PERIOD,
     };
@@ -89,6 +135,13 @@ function persist(state: WorkspaceState, period: Period) {
         taxRatePercent: state.taxRatePercent,
         monthlyGoalMinor: state.monthlyGoalMinor.toString(),
         period,
+        expectations: {
+          ...state.expectations,
+          added: state.expectations.added.map((entry) => ({
+            ...entry,
+            amountMinor: entry.amountMinor.toString(),
+          })),
+        },
       }),
     );
   } catch {
@@ -216,6 +269,68 @@ export function WorkspaceProvider({ user, children }: { user: SessionUser; child
         }
         setState((previous) => ({ ...previous, monthlyGoalMinor: BigInt(parsed) * 100n }));
         return null;
+      },
+      confirmExpectation: (id) =>
+        setState((previous) => ({
+          ...previous,
+          expectations: {
+            ...previous.expectations,
+            confirmed: [...new Set([...previous.expectations.confirmed, id])],
+          },
+        })),
+      removeExpectation: (id) =>
+        setState((previous) => {
+          const { expectations } = previous;
+          const isEntry = expectations.added.some((entry) => entry.id === id);
+          return {
+            ...previous,
+            expectations: isEntry
+              ? { ...expectations, added: expectations.added.filter((entry) => entry.id !== id) }
+              : {
+                  ...expectations,
+                  confirmed: expectations.confirmed.filter((item) => item !== id),
+                  dismissed: [...new Set([...expectations.dismissed, id])],
+                },
+          };
+        }),
+      addExpectation: ({ direction, label, amount, date }) => {
+        const name = label.replace(/[\u0000-\u001f\u007f]/gu, '').trim();
+        if (name.length < 2 || name.length > 60) return 'Name it in 2–60 characters.';
+        const value = amount.trim();
+        if (!/^\d{1,7}(\.\d{1,2})?$/u.test(value) || Number(value) <= 0) {
+          return 'Enter an amount in dollars, for example 240 or 79.99.';
+        }
+        const { start, end } = planWindow();
+        const day = Date.parse(date);
+        if (!/^\d{4}-\d{2}-\d{2}$/u.test(date) || !(day > start && day <= end)) {
+          return 'Pick a date within the next 30 days.';
+        }
+        const [whole, cents = ''] = value.split('.');
+        const amountMinor = BigInt(whole!) * 100n + BigInt(cents.padEnd(2, '0') || '0');
+        const slug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/gu, '-')
+          .replace(/^-|-$/gu, '')
+          .slice(0, 30);
+        const id = `user-${slug || 'entry'}-${Date.now().toString(36)}`;
+        let error: string | null = null;
+        setState((previous) => {
+          if (previous.expectations.added.length >= 20) {
+            error = 'You can keep up to 20 entries in the plan.';
+            return previous;
+          }
+          return {
+            ...previous,
+            expectations: {
+              ...previous.expectations,
+              added: [
+                ...previous.expectations.added,
+                { id, direction, label: name, amountMinor, date },
+              ],
+            },
+          };
+        });
+        return error;
       },
       reset: () => {
         setState(initialWorkspaceState);

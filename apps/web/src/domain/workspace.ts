@@ -480,7 +480,7 @@ export const invoices: Invoice[] = [
   {
     id: 'INV-2026-041',
     clientId: 'lumen',
-    title: 'Phase 3 — research synthesis',
+    title: 'Research synthesis phase',
     amountMinor: 320_000n,
     issuedOn: '2026-10-20',
     dueOn: '2026-11-03',
@@ -496,7 +496,7 @@ export const invoices: Invoice[] = [
   {
     id: 'INV-2026-045',
     clientId: 'atlas',
-    title: 'Q1 planning workshop',
+    title: 'Next-quarter planning workshop',
     amountMinor: 210_000n,
     issuedOn: '2026-11-07',
     dueOn: '2026-11-28',
@@ -528,11 +528,30 @@ export const defaultHours: Record<string, HoursRow> = {
   '2026-11': { design: '14.00', consulting: '5.00', support: '2.00' },
 };
 
+/** An expected payment or expense the person entered. It is their expectation, not a fact. */
+export interface ExpectationInput {
+  id: string;
+  direction: 'in' | 'out';
+  label: string;
+  amountMinor: bigint;
+  /** YYYY-MM-DD. */
+  date: string;
+}
+
+export interface ExpectationsState {
+  /** Detected candidates (or overdue invoices) the person confirmed as still expected. */
+  confirmed: string[];
+  /** Detected events the person removed, for example a cancelled subscription. */
+  dismissed: string[];
+  added: ExpectationInput[];
+}
+
 export interface WorkspaceState {
   confirmedActivityIds: Record<string, ActivityId>;
   hours: Record<string, Partial<HoursRow>>;
   taxRatePercent: number;
   monthlyGoalMinor: bigint;
+  expectations: ExpectationsState;
 }
 
 export const initialWorkspaceState: WorkspaceState = {
@@ -540,6 +559,20 @@ export const initialWorkspaceState: WorkspaceState = {
   hours: {},
   taxRatePercent: 25,
   monthlyGoalMinor: 600_000n,
+  expectations: {
+    confirmed: [],
+    dismissed: [],
+    // The sample freelancer entered this earlier: one payment cannot reveal an annual renewal.
+    added: [
+      {
+        id: 'user-framewise-annual',
+        direction: 'out',
+        label: 'Framewise annual plan renewal',
+        amountMinor: 24_000n,
+        date: '2026-11-25',
+      },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------------------------

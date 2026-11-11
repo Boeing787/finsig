@@ -9,6 +9,7 @@ import {
   ChartNoAxesCombined,
   ChevronDown,
   LayoutDashboard,
+  Receipt,
   LogOut,
   Menu,
   RefreshCw,
@@ -32,6 +33,7 @@ import {
   unassignedSales,
   type Period,
 } from '../../domain/workspace';
+import { cashPlan } from '../../domain/cashplan';
 import { BrandMark, Logo } from '../auth/Logo';
 import { OverlayProvider, Scrim, useOverlay } from './overlay';
 import { useWorkspace } from './WorkspaceProvider';
@@ -309,7 +311,7 @@ export function SyncPill({
 interface Notice {
   id: string;
   icon: LucideIcon;
-  tone: 'danger' | 'ai' | 'warning';
+  tone: 'danger' | 'ai' | 'warning' | 'brand';
   title: string;
   detail: string;
   destination: string;
@@ -340,6 +342,17 @@ function Notifications() {
         destination: `Clients → ${invoice.client.name}`,
         href: `/app/clients?focus=${invoice.clientId}`,
       })),
+    // The AI manager's alerts come from the 30-day cash plan; each ID carries its date, so a
+    // changed plan raises a new alert while an unchanged one stays read.
+    ...cashPlan(state).alerts.map((alert): Notice => ({
+      id: alert.id,
+      icon: Receipt,
+      tone: 'brand',
+      title: alert.title,
+      detail: alert.detail,
+      destination: 'AI Insights → Next 30 days',
+      href: '/app/insights#cash-plan',
+    })),
     ...(unassigned
       ? [
           {

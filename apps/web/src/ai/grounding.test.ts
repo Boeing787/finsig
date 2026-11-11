@@ -134,3 +134,49 @@ test('AI context contains only the sample history and says so', () => {
     assert.match(request.system, /not real, actual or live PayPal income/u);
   }
 });
+
+test('cash plan metrics are the plan computed by code, events included', async () => {
+  const { cashPlan } = await import('../domain/cashplan');
+  const { initialWorkspaceState, money } = await import('../domain/workspace');
+  const plan = cashPlan(initialWorkspaceState);
+  const metrics = new Map(groundedMetrics('2026-10').map((metric) => [metric.id, metric]));
+  assert.equal(metrics.get('plan_in_30d')?.value, money(plan.inMinor));
+  assert.equal(metrics.get('plan_out_30d')?.value, money(-plan.outMinor));
+  assert.equal(metrics.get('plan_difference_30d')?.value, money(plan.differenceMinor));
+  assert.equal(metrics.get('plan_awaiting_30d')?.value, money(plan.awaitingMinor));
+  const renewal = metrics.get('plan_event:user-framewise-annual');
+  assert.match(renewal?.label ?? '', /Framewise annual plan renewal, 2026-11-25 \(entered by/u);
+  assert.equal(renewal?.value, '-$240.00');
+  assert.match(
+    metrics.get('plan_event:pattern:sale:pinecone')?.label ?? '',
+    /waiting for confirmation, not counted/u,
+  );
+});
+
+test('a failing claim is dropped and never shown, the verified ones still are', () => {
+  const metrics = groundedMetrics('2026-10');
+  const answer = validateAnswer(
+    {
+      unsupported: false,
+      claims: [
+        {
+          text: 'The missing Lumen Health milestone was the biggest driver.',
+          metric_ids: ['client_delta:lumen'],
+          record_ids: ['pp-2026-09-lumen'],
+        },
+        {
+          text: 'Consulting earns the least among the three activity types.',
+          metric_ids: ['activity_rate:consulting'],
+          record_ids: [],
+        },
+      ],
+    },
+    metrics,
+  );
+  assert.deepEqual(
+    answer.claims.map((claim) => claim.metric_ids),
+    [['client_delta:lumen']],
+  );
+  assert.equal(answer.dropped.length, 1);
+  assert.match(answer.dropped[0] ?? '', /"three"/u);
+});

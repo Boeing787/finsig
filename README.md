@@ -25,7 +25,13 @@ workspace is a fictional freelancer with twelve months of PayPal-shaped records.
    with quoted PayPal fields; you confirm. The linked refund follows and per-hour figures change.
 4. **AI Insights.** Ask _“Why did the sample net income change this month?”_. Each claim shows the
    code-rendered sample metrics it relies on and links to the source records behind it. The exact bridge,
-   the income-health score and the 30-day plan sit below; edit hours to see the rates move.
+   the income-health score and the **30-day cash plan** sit below; edit hours to see the rates move.
+   The cash plan is the AI manager's view of expected income and expenses: open invoices, payments
+   pending in PayPal, subscriptions detected from three or more monthly payments, and your own
+   entries. A repeating client payment or an overdue invoice counts only after you confirm it, and a
+   single payment is never turned into a renewal. A large upcoming expense raises an in-app alert
+   in the bell; ask _“What should I expect over the next 30 days?”_ for a cited explanation. SMS
+   alerts are on the roadmap and are not sent.
 5. **Transactions.** An AG Grid ledger with filters, search, CSV export and a source drawer for every
    record. The _Live sandbox_ filter shows records read live from the sandbox merchant configured
    for FinSig.
