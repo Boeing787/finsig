@@ -3218,17 +3218,6 @@ ol {
   width: 100%;
   border: 0;
 }
-.paypal-button.is-unavailable {
-  background: linear-gradient(180deg, #5d9cf0, #3f7fd6);
-  box-shadow: none;
-}
-.paypal-button__tag {
-  border-radius: 999px;
-  background: rgb(255 255 255 / 22%);
-  padding: 3px 8px;
-  font-size: 10.5px;
-  font-weight: 700;
-}
 .callout.is-info {
   background: #eef4ff;
   color: #1f3f7a;

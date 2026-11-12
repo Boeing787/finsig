@@ -1,10 +1,11 @@
 # FinSig
 
 FinSig is a financial cockpit demo for freelancers who get paid through PayPal. Its dashboard and AI
-insights use a fictional 12-month sample history. PayPal sandbox OpenID Connect verifies a sign-in
-identity; it does not grant access to that person's transaction history. Separately, when configured,
-PayPal Transaction Search reads the sandbox merchant attached to FinSig's developer app. Those live
-records are labelled and shown separately from the sample analytics. Claude explains and categorises;
+insights use a fictional 12-month sample history. PayPal Transaction Search reads the sandbox
+merchant attached to FinSig's developer app; those live records are labelled and shown separately
+from the sample analytics. Log in with PayPal (sandbox OpenID Connect) is implemented but switched
+off on the hosted demo; when on, it verifies a sign-in identity only and does not grant access to
+that person's transaction history. Claude explains and categorises;
 code calculates every amount and every AI claim must cite verified metrics and source record IDs.
 
 ## Judge path
@@ -14,10 +15,10 @@ straight to [/demo](https://finsig-demo.onrender.com/demo)). No credentials are 
 workspace is a fictional freelancer with twelve months of PayPal-shaped records. Locally, run
 `pnpm dev` and open `http://localhost:3000`.
 
-1. **Sign in & sync.** The sign-in screen offers _Continue with PayPal_ (OpenID Connect identity
-   verification, sandbox) and a one-click demo. The sync screen shows the configured app merchant's
-   live read, if available, and separate checks against the fictional sample history. AI suggestions
-   run only after the judge chooses _Suggest with AI_.
+1. **Sign in & sync.** The sign-in screen opens the one-click demo workspace (Log in with PayPal is
+   switched off on the hosted demo, see below). The sync screen shows the live read of the sandbox
+   merchant configured for FinSig and separate checks against the fictional sample history. AI
+   suggestions run only after the judge chooses _Suggest with AI_.
 2. **Dashboard.** Sample balance (available / pending / tax reserve), KPI cards with sparklines, a
    12-month cash-flow chart (click any month to re-run every widget), effective-hourly-rate trend,
    client mix, monthly goal gauge, upcoming invoices and the latest sample activity.
@@ -46,7 +47,9 @@ workspace is a fictional freelancer with twelve months of PayPal-shaped records.
 - **Log in with PayPal** (`/api/auth/paypal/start` → `/api/auth/paypal/callback`): OpenID Connect
   authorisation-code flow with a `state` cookie. The code is exchanged server-side, the profile is
   read once, and the PayPal access token is discarded. FinSig stores only an 8-hour, HMAC-signed,
-  httpOnly session cookie.
+  httpOnly session cookie. It is switched off on the hosted demo (`PAYPAL_LOGIN_ENABLED=false`), so
+  the sign-in screen shows only the demo workspace; set the flag once _Log in with PayPal_ and the
+  return URL are enabled for the sandbox app.
 - **Transaction Search** (`/api/paypal/sync`): live, read-only reads using the developer app's
   client credentials for its configured sandbox merchant over the last 90 days in 30-day windows,
   normalised by the same code as the importer. This API credential is not delegated from the
@@ -110,12 +113,12 @@ configuration error. The main demo API accepts only fixed tasks. The Studio AI p
 Agent Framework protocol, rate-limits calls, and translates only declared client tools.
 The [Render Blueprint](render.yaml) provisions a Node web service and prompts for the key.
 For API deployment, set `RENDER_API_KEY` in the ignored `.env.local` and run
-`RENDER_PLAN=free node scripts/deploy-render.mjs`. If the key can access multiple Render workspaces,
+`node scripts/deploy-render.mjs` (Starter by default). If the key can access multiple Render workspaces,
 also set `RENDER_OWNER_ID`. The script creates a Frankfurt service, sends the Anthropic key as a
 server-side environment variable, and refuses to create a second service with the same name.
-The current demo uses Render Free because Starter requires a payment method, even with promotional
-credits. Free services spin down after 15 minutes of inactivity and can take about a minute to wake.
-Switch to Starter before judging for a consistently responsive demo.
+The live demo runs on a paid Render Starter instance (0.5 CPU, 512 MB), so it stays awake between
+visits. `RENDER_PLAN=free` creates a free instance instead; free services spin down after 15 minutes
+of inactivity and can take about a minute to wake.
 
 Run a command for one workspace with pnpm filters:
 

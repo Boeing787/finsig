@@ -2,7 +2,7 @@ services:
   - type: web
     name: finsig-demo
     runtime: node
-    plan: free
+    plan: starter # 0.5 CPU, 512 MB; listed as 0.5c-512mb by the Render API
     region: frankfurt
     buildCommand: corepack enable && corepack pnpm install --frozen-lockfile && corepack pnpm --filter @finsig/web build
     startCommand: corepack pnpm --filter @finsig/web exec next start -H 0.0.0.0 -p $PORT
