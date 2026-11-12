@@ -9,13 +9,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../src/features/auth/Logo';
-import { paypalLoginEnabled } from '../src/paypal/identity';
 
 const features = [
   {
     icon: RefreshCw,
     title: 'PayPal sandbox reporting',
-    body: 'Transaction Search reads the sandbox merchant configured for FinSig, and those live records stay separate. Fictional sample history powers the dashboard analytics.',
+    body: 'PayPal sign-in verifies identity. Separately, Transaction Search reads the merchant configured for FinSig; fictional sample history powers dashboard analytics.',
   },
   {
     icon: ChartNoAxesCombined,
@@ -35,7 +34,6 @@ const features = [
 ];
 
 export default function HomePage() {
-  const paypalLogin = paypalLoginEnabled();
   return (
     <main className="landing">
       <header className="landing__nav">
@@ -62,15 +60,10 @@ export default function HomePage() {
           Optional live reads from the FinSig sandbox merchant stay separate and traceable.
         </p>
         <div className="landing__actions">
-          {paypalLogin ? (
-            <Link className="paypal-button" href="/login">
-              <Wallet size={18} /> Sign in with PayPal
-            </Link>
-          ) : null}
-          <Link
-            className={`fs-button fs-button--lg ${paypalLogin ? 'fs-button--quiet' : 'fs-button--primary'}`}
-            href="/demo"
-          >
+          <Link className="paypal-button" href="/login">
+            <Wallet size={18} /> Sign in with PayPal
+          </Link>
+          <Link className="fs-button fs-button--quiet fs-button--lg" href="/demo">
             Explore the live demo <ArrowRight size={16} />
           </Link>
         </div>
@@ -103,25 +96,15 @@ export default function HomePage() {
       </section>
 
       <section className="landing__steps card">
-        <h2>From PayPal records to a decision in under a minute</h2>
+        <h2>From PayPal sign-in to a decision in under a minute</h2>
         <ol>
-          {paypalLogin ? (
-            <li>
-              <strong>1 · Sign in with PayPal</strong>
-              <span>
-                OpenID Connect on PayPal verifies your sandbox identity. FinSig receives your name,
-                email and PayPal account ID, never your password.
-              </span>
-            </li>
-          ) : (
-            <li>
-              <strong>1 · Open the workspace</strong>
-              <span>
-                One click opens a signed session for a fictional freelancer with twelve months of
-                PayPal records. FinSig never asks for a PayPal password.
-              </span>
-            </li>
-          )}
+          <li>
+            <strong>1 · Sign in with PayPal</strong>
+            <span>
+              OpenID Connect on PayPal verifies your sandbox identity. FinSig receives your name,
+              email and PayPal account ID, never your password.
+            </span>
+          </li>
           <li>
             <strong>2 · FinSig syncs and reconciles</strong>
             <span>

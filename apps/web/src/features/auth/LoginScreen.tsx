@@ -45,7 +45,7 @@ export function LoginScreen({
           <div className="preview-card is-rate">
             <span>Effective rate</span>
             <strong>$69.98/h</strong>
-            <em>Support pays best per hour</em>
+            <em>Consulting pays best</em>
           </div>
           <div className="preview-card is-ai">
             <Sparkles size={14} />
@@ -55,7 +55,7 @@ export function LoginScreen({
         </div>
         <ul className="login__trust">
           <li>
-            <Lock size={14} /> {paypalLogin ? 'PayPal OpenID Connect' : 'Live PayPal sandbox reads'}
+            <Lock size={14} /> PayPal OpenID Connect
           </li>
           <li>
             <Eye size={14} /> Merchant reporting is read-only
@@ -70,9 +70,7 @@ export function LoginScreen({
         <div className="login__card">
           <h2>Sign in</h2>
           <p className="login__lede">
-            {paypalLogin
-              ? 'Sign in with a PayPal sandbox identity, or open the fictional sample workspace.'
-              : 'Open the fictional sample workspace. Live records from FinSig’s PayPal sandbox merchant stay separate from its analytics.'}
+            Sign in with a PayPal sandbox identity, or open the fictional sample workspace.
           </p>
           {error ? (
             <p className="callout is-error" role="alert">
@@ -83,19 +81,21 @@ export function LoginScreen({
             <p className="callout is-success">You are signed out. Your session was cleared.</p>
           ) : null}
 
+          <PayPalSignIn enabled={paypalLogin} />
           {paypalLogin ? (
-            <>
-              <PayPalSignIn />
-              <p className="login__hint">
-                Sandbox sign-in verifies your identity only; it does not connect that account’s
-                transaction history. Live Transaction Search reads FinSig’s sandbox merchant and
-                stays separate from the sample analytics below.
-              </p>
-              <div className="login__divider">
-                <span>or</span>
-              </div>
-            </>
+            <p className="login__hint">
+              Sandbox sign-in verifies your identity only; it does not connect that account’s
+              transaction history.
+            </p>
           ) : null}
+          <p className="login__hint">
+            Live Transaction Search, when configured, reads FinSig’s sandbox merchant account and
+            stays separate from the sample analytics below.
+          </p>
+
+          <div className="login__divider">
+            <span>or</span>
+          </div>
 
           <Link className="demo-button" href="/demo">
             <div>
@@ -108,23 +108,12 @@ export function LoginScreen({
           <ul className="login__security">
             <li>
               <Lock size={15} />
-              {paypalLogin ? (
-                <div>
-                  <strong>Your PayPal password never reaches FinSig</strong>
-                  <span>
-                    Sign-in happens on PayPal. FinSig receives your name, email and PayPal account
-                    ID.
-                  </span>
-                </div>
-              ) : (
-                <div>
-                  <strong>No PayPal credentials in your browser</strong>
-                  <span>
-                    FinSig reads its sandbox merchant on the server. API secrets never reach the
-                    page.
-                  </span>
-                </div>
-              )}
+              <div>
+                <strong>Your PayPal password never reaches FinSig</strong>
+                <span>
+                  Sign-in happens on PayPal. FinSig receives your name, email and PayPal account ID.
+                </span>
+              </div>
             </li>
             <li>
               <Eye size={15} />
@@ -140,10 +129,8 @@ export function LoginScreen({
               <div>
                 <strong>Short, signed session</strong>
                 <span>
-                  An 8-hour httpOnly cookie.{' '}
-                  {paypalLogin
-                    ? 'The sign-in token is discarded after reading your profile; '
-                    : null}
+                  An 8-hour httpOnly cookie. The sign-in token is discarded after reading your
+                  profile;{' '}
                   {liveSync
                     ? 'live transactions come from FinSig’s configured sandbox merchant.'
                     : 'live Transaction Search is not configured on this deployment.'}
